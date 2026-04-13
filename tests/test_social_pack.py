@@ -103,3 +103,51 @@ def test_tiktok_platform_hashtags():
     """TikTok platform should include tiktok-specific hashtags."""
     result = generate_social_pack(SAMPLE_SCRIPT, platform="tiktok", brand_name="Brand")
     assert "tiktok" in result["hashtags"].lower()
+
+
+def test_hashtags_are_short_and_clean():
+    """No single hashtag should exceed 25 characters (no slug-monsters)."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config())
+    tags = result["hashtags"].split()
+    for tag in tags:
+        assert len(tag) <= 25, f"Hashtag too long: {tag!r}"
+
+
+def test_hashtags_max_eight():
+    """Result should contain at most 8 hashtags."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config())
+    tags = result["hashtags"].split()
+    assert len(tags) <= 8, f"Too many hashtags: {len(tags)}"
+
+
+def test_hashtags_all_start_with_hash():
+    """Every hashtag must start with #."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config())
+    for tag in result["hashtags"].split():
+        assert tag.startswith("#"), f"Not a hashtag: {tag!r}"
+
+
+def test_save_json(tmp_path):
+    """generate_social_pack result can be saved as JSON via save_json."""
+    from clipforge.utils import save_json, load_json
+    result = generate_social_pack(SAMPLE_SCRIPT, platform="reels", brand_name="Brand")
+    out = tmp_path / "pack.json"
+    save_json(result, out)
+    loaded = load_json(out)
+    assert loaded["title"] == result["title"]
+    assert loaded["hashtags"] == result["hashtags"]
+
+
+def test_save_txt(tmp_path):
+    """The TXT writer used by social-pack command produces a non-empty text file."""
+    from clipforge.commands.social_pack import _write_txt
+    pack = generate_social_pack(SAMPLE_SCRIPT, platform="reels", brand_name="Brand")
+    out = tmp_path / "pack.txt"
+    _write_txt(pack, str(out))
+    text = out.read_text(encoding="utf-8")
+    assert "TITLE" in text
+    assert "HASHTAGS" in text
+    assert pack["hashtags"] in text

@@ -65,11 +65,13 @@ cp .env.example .env
 ```
 
 ```ini
-# Stock media (optional — ClipForge works without these, using solid-colour fallbacks)
+# Stock media — optional but recommended.
+# Without these keys, ClipForge uses solid-colour fallback backgrounds and
+# prints a WARN message per missing key. Rendering still works.
 PEXELS_API_KEY=your_pexels_key_here
 PIXABAY_API_KEY=your_pixabay_key_here
 
-# AI providers (optional — only needed when ai_mode != "off")
+# AI providers — only needed when ai_mode != "off"
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GEMINI_API_KEY=
@@ -89,23 +91,29 @@ clipforge doctor
 # Parse a script and preview scene breakdown
 clipforge scenes --script-file examples/script_example.txt
 
+# Preview the render plan without building
+clipforge make --script-file examples/script_example.txt --dry-run
+
 # Build a video (silent audio, static subtitles)
 clipforge make --script-file examples/script_example.txt \
                --platform reels \
                --audio-mode silent \
                --output output/demo.mp4
+# → prints: scenes, stock hits, fallbacks, duration, audio/text mode, output path
 
 # Build from a config file
 clipforge make --config examples/config_example.json
 
-# Generate a social media content pack
+# Generate a social media content pack (terminal + saved files)
 clipforge social-pack --script-file examples/script_example.txt \
-                      --platform reels --brand-name YourBrand
+                      --platform reels --brand-name YourBrand \
+                      --save-json output/social.json \
+                      --save-txt  output/social.txt
 
-# Create a thumbnail
+# Create a thumbnail (choose style: clean, bold, minimal)
 clipforge thumbnail --text "How AI changes business" \
                     --platform reels --brand-name YourBrand \
-                    --output output/thumb.jpg
+                    --style bold --output output/thumb.jpg
 ```
 
 ---

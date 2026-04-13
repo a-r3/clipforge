@@ -43,7 +43,7 @@ def make(
     dry_run: bool,
 ) -> None:
     """Build a short video from a script."""
-    from clipforge.config_loader import load_config
+    from clipforge.config_loader import load_config, ConfigLoader
     from clipforge.script_parser import ScriptParser
     from clipforge.scene_planner import ScenePlanner
 
@@ -64,6 +64,13 @@ def make(
     }
 
     config = load_config(config_file, overrides)
+
+    # Validate config
+    errors = ConfigLoader().validate(config)
+    if errors:
+        for err in errors:
+            click.echo(f"Config error: {err}", err=True)
+        sys.exit(1)
 
     # Apply preset if specified
     if preset:
@@ -88,7 +95,10 @@ def make(
             script_text = f.read()
 
     if not script_text.strip():
-        click.echo("Error: No script provided. Use --script-file or set script_file in config.", err=True)
+        click.echo(
+            "Error: No script provided. Use --script-file or set script_file in config.",
+            err=True,
+        )
         sys.exit(1)
 
     # Parse script
@@ -96,28 +106,43 @@ def make(
     scenes = parser.parse(script_text)
     scene_dicts = [s.to_dict() for s in scenes]
 
-    click.echo(f"Script parsed into {len(scenes)} scene(s).")
+    click.echo(f"Parsed {len(scenes)} scene(s).")
 
     # Plan scenes
     planner = ScenePlanner(ai_mode=config.get("ai_mode", "off"))
     planned = planner.plan(scene_dicts)
 
     if dry_run:
-        click.echo("Dry run complete. Planned scenes:")
-        for i, p_scene in enumerate(planned, 1):
-            click.echo(f"  Scene {i}: [{p_scene['visual_type']}] {p_scene['query']!r} "
-                       f"({p_scene['duration']:.1f}s)")
+        _print_dry_run(planned, config)
         return
 
     # Build video
     output_path = config.get("output", "output/video.mp4")
-    click.echo(f"Building video -> {output_path}")
+    click.echo(f"Building video  -> {output_path}")
 
     try:
         from clipforge.builder import VideoBuilder
         builder = VideoBuilder()
-        result = builder.build(planned, config, output_path)
-        click.echo(f"Done! Video written to: {result}")
+        summary = builder.build(planned, config, output_path)
+        summary.print()
     except Exception as exc:
         click.echo(f"Error building video: {exc}", err=True)
         sys.exit(1)
+
+
+def _print_dry_run(planned: list, config: dict) -> None:
+    """Print a dry-run scene plan."""
+    click.echo("Dry run — planned scenes:")
+    total = 0.0
+    for i, scene in enumerate(planned, 1):
+        dur = scene["duration"]
+        total += dur
+        click.echo(
+            f"  Scene {i:2d}: [{scene['visual_type']:12s}] {scene['query']!r:<40s} ({dur:.1f}s)"
+        )
+    click.echo(
+        f"\nTotal: {len(planned)} scene(s), ~{total:.1f}s  |  "
+        f"audio={config.get('audio_mode','silent')}  "
+        f"text={config.get('text_mode','none')}  "
+        f"platform={config.get('platform','reels')}"
+    )

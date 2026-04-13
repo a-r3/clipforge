@@ -8,13 +8,11 @@ from __future__ import annotations
 
 import logging
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from clipforge.constants import (
-    PLATFORM_REELS,
-    DEFAULT_PLATFORM,
-)
+from clipforge.constants import DEFAULT_PLATFORM
 from clipforge.utils import ensure_dir, get_platform_spec
 from clipforge.text_engine import TextEngine
 from clipforge.audio_engine import AudioEngine
@@ -32,6 +30,37 @@ _BG_COLORS: dict[str, tuple[int, int, int]] = {
 }
 
 
+@dataclass
+class BuildSummary:
+    """Statistics returned after a successful build."""
+
+    scene_count: int = 0
+    stock_hits: int = 0
+    fallbacks: int = 0
+    total_duration: float = 0.0
+    output_path: str = ""
+    audio_mode: str = ""
+    text_mode: str = ""
+    subtitle_mode: str = ""
+    stock_sources: list[str] = field(default_factory=list)
+
+    def print(self) -> None:
+        """Print a human-readable summary to stdout."""
+        line = "-" * 48
+        print(line)
+        print("  Build complete")
+        print(line)
+        print(f"  Scenes          : {self.scene_count}")
+        print(f"  Stock hits      : {self.stock_hits}")
+        print(f"  Fallbacks       : {self.fallbacks}")
+        print(f"  Total duration  : {self.total_duration:.1f}s")
+        print(f"  Audio mode      : {self.audio_mode}")
+        print(f"  Text mode       : {self.text_mode}")
+        print(f"  Subtitle mode   : {self.subtitle_mode}")
+        print(f"  Output          : {self.output_path}")
+        print(line)
+
+
 class VideoBuilder:
     """Assemble video clips into a final MP4."""
 
@@ -44,7 +73,7 @@ class VideoBuilder:
         scenes: list[dict[str, Any]],
         config: dict[str, Any],
         output_path: str | Path,
-    ) -> Path:
+    ) -> BuildSummary:
         """Build the video from *scenes* using *config* and write to *output_path*.
 
         Args:
@@ -53,7 +82,7 @@ class VideoBuilder:
             output_path: Where to write the MP4.
 
         Returns:
-            Path to the written MP4 file.
+            BuildSummary with render statistics.
         """
         output_path = Path(output_path)
         ensure_dir(output_path.parent)
@@ -63,14 +92,29 @@ class VideoBuilder:
         width, height = spec["width"], spec["height"]
         fps = spec["fps"]
 
+        # Optionally fetch stock media
+        scenes = self._attach_stock_media(scenes, config, width, height)
+
         # Build individual scene clips
+        if not scenes:
+            raise ValueError("No scenes to build video from.")
+
+        stock_hits = 0
+        fallbacks = 0
+        sources: list[str] = []
+        total_duration = 0.0
         video_clips = []
+
         for scene in scenes:
             clip = self._build_scene_clip(scene, width, height, config)
             video_clips.append(clip)
-
-        if not video_clips:
-            raise ValueError("No scenes to build video from.")
+            total_duration += scene.get("duration", 3.0)
+            src = scene.get("_media_source", "fallback")
+            sources.append(src)
+            if src == "fallback":
+                fallbacks += 1
+            else:
+                stock_hits += 1
 
         # Concatenate all scene clips
         final_clip = self._concatenate_clips(video_clips)
@@ -90,7 +134,58 @@ class VideoBuilder:
         self._write_videofile(final_clip, str(output_path), fps)
 
         logger.info("Video written to %s", output_path)
-        return output_path
+
+        return BuildSummary(
+            scene_count=len(scenes),
+            stock_hits=stock_hits,
+            fallbacks=fallbacks,
+            total_duration=total_duration,
+            output_path=str(output_path),
+            audio_mode=config.get("audio_mode", "silent"),
+            text_mode=config.get("text_mode", "none"),
+            subtitle_mode=config.get("subtitle_mode", "static"),
+            stock_sources=sources,
+        )
+
+    # ------------------------------------------------------------------
+    # Stock media attachment
+    # ------------------------------------------------------------------
+
+    def _attach_stock_media(
+        self,
+        scenes: list[dict[str, Any]],
+        config: dict[str, Any],
+        width: int,
+        height: int,
+    ) -> list[dict[str, Any]]:
+        """Attempt to attach stock media paths to each scene dict.
+
+        Emits warnings if API keys are missing. Scenes with no media
+        found get ``asset_path = ""`` and ``_media_source = "fallback"``.
+        """
+        from clipforge.media_fetcher import MediaFetcher
+
+        fetcher = MediaFetcher(
+            pexels_key=config.get("pexels_api_key", ""),
+            pixabay_key=config.get("pixabay_api_key", ""),
+        )
+
+        # Warn once per missing key
+        for warning in fetcher.warn_if_no_keys():
+            logger.warning(warning)
+
+        updated: list[dict[str, Any]] = []
+        for scene in scenes:
+            scene = dict(scene)
+            if not scene.get("asset_path"):
+                path, source = fetcher.fetch_for_scene(scene, width, height)
+                scene["asset_path"] = path or ""
+                scene["_media_source"] = source
+            else:
+                scene.setdefault("_media_source", "pre_loaded")
+            updated.append(scene)
+
+        return updated
 
     # ------------------------------------------------------------------
     # Private helpers — isolated for easy mocking in tests
@@ -105,7 +200,6 @@ class VideoBuilder:
     ) -> Any:
         """Build a single scene clip from a scene dict."""
         duration = scene.get("duration", 3.0)
-        visual_type = scene.get("visual_type", "abstract")
 
         # Try to load a video/image asset; fall back to solid colour
         clip = self._load_or_create_clip(scene, width, height, duration)
@@ -131,7 +225,7 @@ class VideoBuilder:
             try:
                 return self._load_video_clip(asset_path, duration, width, height)
             except Exception as exc:
-                logger.warning("Failed to load asset %s: %s", asset_path, exc)
+                logger.warning("Failed to load asset %s: %s — using fallback", asset_path, exc)
 
         # Fallback to solid colour background
         return self._create_color_clip(color, duration, width, height)
@@ -145,7 +239,6 @@ class VideoBuilder:
         if clip.duration > duration:
             clip = clip.subclip(0, duration)
         elif clip.duration < duration:
-            # Loop the clip
             from moviepy.video.fx.all import loop  # type: ignore[import]
             clip = loop(clip, duration=duration)
         return clip
@@ -164,18 +257,14 @@ class VideoBuilder:
 
     def _resize_and_crop(self, clip: Any, width: int, height: int) -> Any:
         """Resize and centre-crop a clip to fill (width, height)."""
-        from moviepy.editor import vfx  # type: ignore[import]
-
         cw, ch = clip.w, clip.h
         target_ratio = width / height
         clip_ratio = cw / ch
 
         if clip_ratio > target_ratio:
-            # Clip is wider — scale by height, then crop width
             new_height = height
             new_width = int(cw * height / ch)
         else:
-            # Clip is taller — scale by width, then crop height
             new_width = width
             new_height = int(ch * width / cw)
 
@@ -197,9 +286,7 @@ class VideoBuilder:
         outro_text: str,
         config: dict[str, Any],
     ) -> Any:
-        """Add intro and/or outro text overlays."""
-        # Simple implementation: overlay text at start/end
-        # In a full implementation these could be separate clips prepended/appended
+        """Add intro and/or outro text overlays (future: prepend/append clips)."""
         return clip
 
     def _write_videofile(self, clip: Any, output_path: str, fps: int) -> None:
@@ -218,10 +305,10 @@ def make_video(
     script: str,
     out_name: str = "final.mp4",
     voiceover_path: str | None = None,
-) -> Path:
-    """Build a video from a script (legacy convenience function).
+) -> BuildSummary:
+    """Build a video from a script (convenience function).
 
-    This is a simplified entry point for quick use and backward compatibility.
+    Returns a BuildSummary with render statistics.
     """
     from clipforge.script_parser import ScriptParser
     from clipforge.scene_planner import ScenePlanner

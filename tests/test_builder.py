@@ -79,6 +79,37 @@ def test_build_raises_on_empty_scenes(tmp_path):
         pass  # Either ValueError or ImportError (moviepy) — both acceptable
 
 
+def test_build_summary_dataclass():
+    """BuildSummary must be importable and have the expected fields."""
+    from clipforge.builder import BuildSummary
+    s = BuildSummary(
+        scene_count=3,
+        stock_hits=2,
+        fallbacks=1,
+        total_duration=18.5,
+        output_path="output/test.mp4",
+        audio_mode="silent",
+        text_mode="subtitle",
+        subtitle_mode="static",
+    )
+    assert s.scene_count == 3
+    assert s.stock_hits == 2
+    assert s.fallbacks == 1
+    assert s.total_duration == 18.5
+
+
+def test_build_summary_print_runs(capsys):
+    """BuildSummary.print() should produce output without error."""
+    from clipforge.builder import BuildSummary
+    s = BuildSummary(scene_count=2, stock_hits=1, fallbacks=1,
+                     output_path="out.mp4", audio_mode="silent",
+                     text_mode="none", subtitle_mode="static")
+    s.print()
+    out = capsys.readouterr().out
+    assert "2" in out
+    assert "out.mp4" in out
+
+
 def test_build_aborts_gracefully_without_moviepy(tmp_path, caplog):
     """build() should fail gracefully when moviepy is not installed."""
     import logging

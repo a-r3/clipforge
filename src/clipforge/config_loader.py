@@ -80,28 +80,54 @@ class ConfigLoader:
         return config
 
     def validate(self, config: dict[str, Any]) -> list[str]:
-        """Validate *config* and return a list of error messages (empty = valid)."""
+        """Validate *config* and return a list of human-readable error messages.
+
+        An empty list means the config is valid.
+        """
         errors: list[str] = []
 
-        script_file = config.get("script_file", "")
-        if not script_file and not config.get("script_text", ""):
-            # Not an error at load time — the CLI will check this
-            pass
+        from clipforge.constants import ALL_PLATFORMS, AUDIO_MODES, TEXT_MODES, SUBTITLE_MODES
 
+        # Platform
         platform = config.get("platform", "")
-        from clipforge.constants import ALL_PLATFORMS
         if platform and platform not in ALL_PLATFORMS:
-            errors.append(f"Unknown platform '{platform}'. Valid: {sorted(ALL_PLATFORMS)}")
+            errors.append(
+                f"Invalid platform '{platform}'. "
+                f"Supported: {', '.join(sorted(ALL_PLATFORMS))}."
+            )
 
+        # Audio mode
         audio_mode = config.get("audio_mode", "")
-        from clipforge.constants import AUDIO_MODES
         if audio_mode and audio_mode not in AUDIO_MODES:
-            errors.append(f"Unknown audio_mode '{audio_mode}'. Valid: {sorted(AUDIO_MODES)}")
+            errors.append(
+                f"Invalid audio_mode '{audio_mode}'. "
+                f"Supported: {', '.join(sorted(AUDIO_MODES))}."
+            )
 
+        # Text mode
         text_mode = config.get("text_mode", "")
-        from clipforge.constants import TEXT_MODES
         if text_mode and text_mode not in TEXT_MODES:
-            errors.append(f"Unknown text_mode '{text_mode}'. Valid: {sorted(TEXT_MODES)}")
+            errors.append(
+                f"Invalid text_mode '{text_mode}'. "
+                f"Supported: {', '.join(sorted(TEXT_MODES))}."
+            )
+
+        # Subtitle mode
+        subtitle_mode = config.get("subtitle_mode", "")
+        if subtitle_mode and subtitle_mode not in SUBTITLE_MODES:
+            errors.append(
+                f"Invalid subtitle_mode '{subtitle_mode}'. "
+                f"Supported: {', '.join(sorted(SUBTITLE_MODES))}."
+            )
+
+        # File paths — only validate if non-empty (existence check)
+        import os
+        for key in ("script_file", "music_file", "logo_file"):
+            val = config.get(key, "")
+            if val and not os.path.exists(val):
+                errors.append(
+                    f"File not found for '{key}': {val}"
+                )
 
         return errors
 

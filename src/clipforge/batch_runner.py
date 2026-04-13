@@ -1,12 +1,13 @@
 """Batch runner for ClipForge.
 
 Processes multiple video jobs from a batch JSON file, continuing on
-failures and printing a summary.
+failures and printing a clear per-job status and final summary.
 """
 
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -22,17 +23,15 @@ class BatchRunner:
         """Initialize the batch runner.
 
         Args:
-            on_error: How to handle job errors. 'continue' (default) or 'stop'.
+            on_error: How to handle job errors. ``"continue"`` (default) or ``"stop"``.
         """
         self.on_error = on_error
 
     def load_batch(self, batch_file: str | Path) -> list[dict[str, Any]]:
         """Load jobs from a batch JSON file.
 
-        The file should be a JSON array of job config dicts, or a JSON object
-        with a ``jobs`` key containing the array.
-
-        Returns a list of job dicts.
+        Accepts either a JSON array of job dicts, or a JSON object with a
+        ``"jobs"`` key containing the array.
         """
         data = load_json(batch_file)
         if isinstance(data, list):
@@ -46,40 +45,54 @@ class BatchRunner:
 
         Args:
             batch_file: Path to the batch JSON file.
-            dry_run: If True, validate jobs but do not run them.
+            dry_run: If True, validate jobs but do not render.
 
         Returns:
             Summary dict with keys: total, succeeded, failed, errors.
         """
         jobs = self.load_batch(batch_file)
         total = len(jobs)
+
+        if total == 0:
+            print("Batch: no jobs found.")
+            return {"total": 0, "succeeded": 0, "failed": 0, "errors": []}
+
+        mode_label = " [dry run]" if dry_run else ""
+        print(f"\nBatch{mode_label}: {total} job(s)")
+        print("-" * 52)
+
         succeeded = 0
         failed = 0
         errors: list[dict[str, Any]] = []
 
-        logger.info("Starting batch: %d job(s)", total)
-        print(f"Batch: {total} job(s) to process")
-
         for i, job in enumerate(jobs, 1):
-            job_name = job.get("output", f"job-{i}")
-            print(f"  [{i}/{total}] {job_name} ...", end=" ", flush=True)
+            job_output = job.get("output", f"batch_job_{i}.mp4")
+            job_script = job.get("script_file", job.get("script_text", "")[:40] or "(inline)")
+            label = f"[{i}/{total}] {Path(job_output).name}"
+            print(f"  {label:<35s}", end="", flush=True)
 
             if dry_run:
-                print("SKIPPED (dry run)")
+                print("SKIP")
                 succeeded += 1
                 continue
 
+            t0 = time.monotonic()
             try:
-                self._run_job(job, i)
-                print("OK")
+                result_info = self._run_job(job, i)
+                elapsed = time.monotonic() - t0
+                scenes = result_info.get("scenes", "?")
+                print(f"OK  ({scenes} scenes, {elapsed:.1f}s)")
                 succeeded += 1
             except Exception as exc:
+                elapsed = time.monotonic() - t0
                 msg = str(exc)
-                print(f"FAILED: {msg}")
-                logger.error("Job %d failed: %s", i, msg)
-                errors.append({"job": i, "output": job_name, "error": msg})
+                print(f"FAIL ({elapsed:.1f}s)")
+                print(f"       → {msg}")
+                logger.error("Job %d (%s) failed: %s", i, job_output, msg)
+                errors.append({"job": i, "output": job_output, "error": msg})
                 failed += 1
                 if self.on_error == "stop":
+                    print("  Stopping batch (--stop-on-error).")
                     break
 
         summary = {
@@ -88,21 +101,19 @@ class BatchRunner:
             "failed": failed,
             "errors": errors,
         }
-
         self._print_summary(summary)
         return summary
 
-    def _run_job(self, job: dict[str, Any], index: int) -> None:
-        """Run a single job dict.
+    def _run_job(self, job: dict[str, Any], index: int) -> dict[str, Any]:
+        """Run a single job and return a dict with render info.
 
-        Raises an exception on failure (which the caller catches).
+        Raises an exception on failure.
         """
         from clipforge.config_loader import load_config
         from clipforge.script_parser import ScriptParser
         from clipforge.scene_planner import ScenePlanner
         from clipforge.builder import VideoBuilder
 
-        # Build config for this job
         config_file = job.get("config_file")
         config = load_config(config_file, overrides=job)
 
@@ -126,13 +137,28 @@ class BatchRunner:
 
         output = config.get("output", f"output/batch_{index}.mp4")
         builder = VideoBuilder()
-        builder.build(planned, config, output)
+        summary = builder.build(planned, config, output)
+
+        return {"scenes": summary.scene_count, "output": output}
 
     def _print_summary(self, summary: dict[str, Any]) -> None:
         """Print a human-readable batch summary."""
-        print(f"\nBatch complete: {summary['succeeded']}/{summary['total']} succeeded, "
-              f"{summary['failed']} failed.")
+        total = summary["total"]
+        ok = summary["succeeded"]
+        fail = summary["failed"]
+        skipped = total - ok - fail
+
+        print("-" * 52)
+        status = "complete" if fail == 0 else "complete with errors"
+        parts = [f"{ok}/{total} succeeded"]
+        if fail:
+            parts.append(f"{fail} failed")
+        if skipped:
+            parts.append(f"{skipped} skipped")
+        print(f"Batch {status}: {', '.join(parts)}")
+
         if summary["errors"]:
-            print("Errors:")
+            print("\nFailed jobs:")
             for err in summary["errors"]:
-                print(f"  Job {err['job']} ({err['output']}): {err['error']}")
+                out = Path(err["output"]).name
+                print(f"  Job {err['job']:2d}  {out:<30s}  {err['error']}")

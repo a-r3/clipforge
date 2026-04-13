@@ -129,3 +129,108 @@ def test_cli_thumbnail(tmp_path):
     assert result.exit_code == 0
     assert out.exists()
     assert out.stat().st_size > 0
+
+
+def test_cli_thumbnail_style_presets(tmp_path):
+    """thumbnail --style should accept clean, bold, minimal."""
+    runner = CliRunner()
+    for style in ("clean", "bold", "minimal"):
+        out = tmp_path / f"thumb_{style}.jpg"
+        result = runner.invoke(
+            main,
+            ["thumbnail", "--text", "Test", "--style", style, "--output", str(out)],
+        )
+        assert result.exit_code == 0, f"style={style} failed: {result.output}"
+        assert out.exists()
+
+
+def test_cli_thumbnail_rejects_bad_extension(tmp_path):
+    """thumbnail should reject non-jpg/png output extension."""
+    runner = CliRunner()
+    out = tmp_path / "thumb.gif"
+    result = runner.invoke(main, ["thumbnail", "--text", "T", "--output", str(out)])
+    assert result.exit_code != 0
+    assert "extension" in result.output.lower() or result.exit_code != 0
+
+
+def test_cli_thumbnail_png_output(tmp_path):
+    """thumbnail should accept .png output."""
+    out = tmp_path / "thumb.png"
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        ["thumbnail", "--text", "PNG Test", "--platform", "youtube", "--output", str(out)],
+    )
+    assert result.exit_code == 0
+    assert out.exists()
+
+
+def test_cli_social_pack_save_json(tmp_path):
+    """social-pack --save-json should write a JSON file."""
+    script = tmp_path / "script.txt"
+    script.write_text("AI is transforming business today.", encoding="utf-8")
+    out_json = tmp_path / "pack.json"
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "social-pack", "--script-file", str(script),
+            "--platform", "reels",
+            "--save-json", str(out_json),
+        ],
+    )
+    assert result.exit_code == 0
+    assert out_json.exists()
+    import json
+    data = json.loads(out_json.read_text())
+    assert "title" in data
+    assert "hashtags" in data
+
+
+def test_cli_social_pack_save_txt(tmp_path):
+    """social-pack --save-txt should write a plain-text file."""
+    script = tmp_path / "script.txt"
+    script.write_text("Technology is changing the world.", encoding="utf-8")
+    out_txt = tmp_path / "pack.txt"
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "social-pack", "--script-file", str(script),
+            "--platform", "tiktok",
+            "--save-txt", str(out_txt),
+        ],
+    )
+    assert result.exit_code == 0
+    assert out_txt.exists()
+    content = out_txt.read_text()
+    assert "TITLE" in content
+    assert "HASHTAGS" in content
+
+
+def test_cli_make_dry_run(tmp_path):
+    """make --dry-run should print planned scenes without rendering."""
+    script = tmp_path / "script.txt"
+    script.write_text(
+        "AI is transforming business today.\n\nTeams using AI gain advantages.",
+        encoding="utf-8",
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        ["make", "--script-file", str(script), "--dry-run"],
+    )
+    assert result.exit_code == 0
+    assert "Scene" in result.output or "scene" in result.output
+
+
+def test_cli_make_invalid_platform_rejected(tmp_path):
+    """make with an invalid platform value should fail at Click level."""
+    script = tmp_path / "script.txt"
+    script.write_text("Test script.", encoding="utf-8")
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        ["make", "--script-file", str(script), "--platform", "snapchat"],
+    )
+    assert result.exit_code != 0

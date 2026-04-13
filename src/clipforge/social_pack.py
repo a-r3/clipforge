@@ -134,19 +134,38 @@ def _build_summary(script: str, max_chars: int = 200) -> str:
 
 
 def _build_hashtags(script: str, platform: str, extra_tags: list[str] | None = None) -> str:
-    """Build a hashtag string for the platform."""
+    """Build a short, clean hashtag string for the platform.
+
+    Topic-based tags are limited to single meaningful words (max 20 chars)
+    to avoid long unreadable slug-hashtags.
+    """
     base_tags = list(_PLATFORM_HASHTAGS.get(platform, _PLATFORM_HASHTAGS[PLATFORM_REELS]))
 
-    # Add topic-based hashtags
+    # Extract 1-2 short topic-specific hashtags from individual keywords
     topic = _extract_topic(script)
-    topic_tag = "#" + re.sub(r"\s+", "", topic.lower())
-    if len(topic_tag) > 2:
-        base_tags.insert(0, topic_tag)
+    words = [w for w in re.findall(r"[a-zA-Z]{4,}", topic.lower()) if w]
+    topic_tags = []
+    for w in words[:2]:
+        tag = f"#{w}"
+        # Skip if too long or already in platform tags
+        if len(tag) <= 20 and tag not in base_tags:
+            topic_tags.append(tag)
 
+    combined = topic_tags + base_tags
     if extra_tags:
-        base_tags.extend(extra_tags)
+        combined.extend(extra_tags)
 
-    return " ".join(base_tags[:12])
+    # Deduplicate while preserving order, cap at 8 tags
+    seen: set[str] = set()
+    result: list[str] = []
+    for tag in combined:
+        if tag not in seen:
+            seen.add(tag)
+            result.append(tag)
+        if len(result) >= 8:
+            break
+
+    return " ".join(result)
 
 
 class SocialPackGenerator:

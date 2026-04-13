@@ -95,6 +95,44 @@ class TestConfigLoader:
         errors = loader.validate(config)
         assert len(errors) > 0
 
+    def test_validate_catches_invalid_text_mode(self):
+        loader = ConfigLoader()
+        errors = loader.validate({"text_mode": "bad_mode"})
+        assert any("text_mode" in e for e in errors)
+
+    def test_validate_catches_invalid_subtitle_mode(self):
+        loader = ConfigLoader()
+        errors = loader.validate({"subtitle_mode": "spinning"})
+        assert any("subtitle_mode" in e for e in errors)
+
+    def test_validate_valid_subtitle_modes(self):
+        loader = ConfigLoader()
+        for mode in ("static", "typewriter", "word-by-word"):
+            errors = loader.validate({"subtitle_mode": mode})
+            assert errors == [], f"Unexpected error for subtitle_mode={mode!r}: {errors}"
+
+    def test_validate_catches_missing_script_file(self, tmp_path):
+        loader = ConfigLoader()
+        errors = loader.validate({"script_file": str(tmp_path / "ghost.txt")})
+        assert any("script_file" in e for e in errors)
+
+    def test_validate_catches_missing_music_file(self, tmp_path):
+        loader = ConfigLoader()
+        errors = loader.validate({"music_file": str(tmp_path / "missing.mp3")})
+        assert any("music_file" in e for e in errors)
+
+    def test_validate_ignores_empty_optional_paths(self):
+        loader = ConfigLoader()
+        errors = loader.validate({"music_file": "", "logo_file": ""})
+        assert errors == []
+
+    def test_error_messages_are_human_readable(self):
+        loader = ConfigLoader()
+        errors = loader.validate({"platform": "snapchat"})
+        assert len(errors) > 0
+        # Message should contain the bad value
+        assert "snapchat" in errors[0]
+
 
 class TestLoadConfigFunction:
     def test_returns_dict(self):
