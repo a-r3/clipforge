@@ -1,0 +1,2 @@
+Place royalty-free background images here (.jpg, .png).
+These are used as fallback visuals when stock API calls fail.

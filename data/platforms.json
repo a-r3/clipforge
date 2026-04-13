@@ -1,0 +1,62 @@
+{
+  "reels": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "aspect_ratio": "9:16",
+    "max_duration": 90,
+    "format": "mp4",
+    "codec": "libx264",
+    "audio_codec": "aac",
+    "bitrate": "4000k",
+    "description": "Instagram Reels (vertical short-form)"
+  },
+  "tiktok": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "aspect_ratio": "9:16",
+    "max_duration": 180,
+    "format": "mp4",
+    "codec": "libx264",
+    "audio_codec": "aac",
+    "bitrate": "4000k",
+    "description": "TikTok (vertical short-form)"
+  },
+  "youtube-shorts": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 60,
+    "aspect_ratio": "9:16",
+    "max_duration": 60,
+    "format": "mp4",
+    "codec": "libx264",
+    "audio_codec": "aac",
+    "bitrate": "8000k",
+    "description": "YouTube Shorts (vertical short-form)"
+  },
+  "youtube": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "aspect_ratio": "16:9",
+    "max_duration": 3600,
+    "format": "mp4",
+    "codec": "libx264",
+    "audio_codec": "aac",
+    "bitrate": "8000k",
+    "description": "YouTube landscape video"
+  },
+  "landscape": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "aspect_ratio": "16:9",
+    "max_duration": 3600,
+    "format": "mp4",
+    "codec": "libx264",
+    "audio_codec": "aac",
+    "bitrate": "8000k",
+    "description": "Generic 16:9 landscape video"
+  }
+}

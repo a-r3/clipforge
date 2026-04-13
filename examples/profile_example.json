@@ -1,0 +1,23 @@
+{
+  "channel_name": "Azerbite",
+  "brand_name": "Azerbite",
+  "logo_file": "assets/logo/logo.png",
+  "watermark_position": "top-right",
+  "default_platform": "reels",
+  "default_style": "clean",
+  "default_audio_mode": "voiceover+music",
+  "default_text_mode": "subtitle",
+  "default_subtitle_mode": "word-by-word",
+  "default_music_volume": 0.12,
+  "default_voice_language": "az",
+  "intro_text": "Azerbite",
+  "outro_text": "Follow for more",
+  "hashtag_sets": {
+    "reels": ["#reels", "#business", "#entrepreneur", "#azerbite"],
+    "tiktok": ["#tiktok", "#learnontiktok", "#business", "#azerbite"],
+    "youtube-shorts": ["#shorts", "#youtubeshorts", "#business", "#azerbite"]
+  },
+  "ai_mode": "off",
+  "ai_provider": "",
+  "ai_model": ""
+}

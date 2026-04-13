@@ -5,8 +5,10 @@ __pycache__/
 
 # Virtual environments
 .venv/
+venv/
+env/
 
-# Environment files
+# Environment files — never commit secrets
 .env
 
 # Output and cache directories
@@ -14,13 +16,24 @@ output/
 cache/
 assets/downloads/
 assets/temp/
+*.mp4
+*.mp3
+*.wav
+
+# Claude Code local config
+.claude/
+
+# Temp / patch files
+test_patch.txt
 
 # OS metadata
 .DS_Store
 Thumbs.db
 
-# Tests and build
+# Tests and build artifacts
 .coverage
+htmlcov/
 dist/
 build/
 *.egg-info/
+.pytest_cache/

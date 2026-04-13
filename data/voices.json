@@ -1,0 +1,44 @@
+{
+  "en": {
+    "engine": "pyttsx3",
+    "language": "en",
+    "rate": 150,
+    "volume": 0.9,
+    "description": "English (default system voice)"
+  },
+  "az": {
+    "engine": "pyttsx3",
+    "language": "az",
+    "rate": 140,
+    "volume": 0.9,
+    "description": "Azerbaijani (pyttsx3 system voice)"
+  },
+  "tr": {
+    "engine": "pyttsx3",
+    "language": "tr",
+    "rate": 145,
+    "volume": 0.9,
+    "description": "Turkish (pyttsx3 system voice)"
+  },
+  "ru": {
+    "engine": "pyttsx3",
+    "language": "ru",
+    "rate": 140,
+    "volume": 0.9,
+    "description": "Russian (pyttsx3 system voice)"
+  },
+  "de": {
+    "engine": "pyttsx3",
+    "language": "de",
+    "rate": 145,
+    "volume": 0.9,
+    "description": "German (pyttsx3 system voice)"
+  },
+  "es": {
+    "engine": "pyttsx3",
+    "language": "es",
+    "rate": 155,
+    "volume": 0.9,
+    "description": "Spanish (pyttsx3 system voice)"
+  }
+}

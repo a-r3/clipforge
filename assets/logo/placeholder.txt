@@ -1,0 +1,2 @@
+Place your brand logo here (logo.png recommended).
+Reference it in your config as: "logo_file": "assets/logo/logo.png"
