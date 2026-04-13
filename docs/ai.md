@@ -16,4 +16,4 @@ AI_MODEL=gpt-4
 OPENAI_API_KEY=<your_key>
 ```
 
-Provider implementations live under `src/autovideo/ai/providers/`.  Refer to `src/autovideo/ai/provider.py` for the abstract interface.
+Provider implementations live under `src/clipforge/ai/providers/`.  Refer to `src/clipforge/ai/provider.py` for the abstract interface.

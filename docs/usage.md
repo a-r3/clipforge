@@ -17,7 +17,7 @@ Edit the `.env` file to add API keys for Pexels or Pixabay if you wish to downlo
 The basic command to create a video from a script:
 
 ```bash
-autovideo make --script-file examples/script_example.txt --output output/demo.mp4
+clipforge make --script-file examples/script_example.txt --output output/demo.mp4
 ```
 
 ### Options
@@ -29,7 +29,7 @@ autovideo make --script-file examples/script_example.txt --output output/demo.mp
 You can also provide a JSON configuration file:
 
 ```bash
-autovideo make --config examples/config_example.json
+clipforge make --config examples/config_example.json
 ```
 
 ## Previewing scenes
@@ -37,7 +37,7 @@ autovideo make --config examples/config_example.json
 Use the `scenes` subcommand to preview how your script will be segmented:
 
 ```bash
-autovideo scenes --script-file examples/script_example.txt
+clipforge scenes --script-file examples/script_example.txt
 ```
 
 ## Diagnostics
@@ -45,5 +45,5 @@ autovideo scenes --script-file examples/script_example.txt
 Check your installation and environment with the `doctor` command:
 
 ```bash
-autovideo doctor
+clipforge doctor
 ```

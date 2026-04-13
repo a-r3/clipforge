@@ -22,12 +22,13 @@ dependencies = [
     "requests>=2.28",
     "rich>=13.0",
     "Pillow>=9.0",
+    # moviepy 1.0.3 is the last stable release compatible with the
+    # video rendering pipeline used by ClipForge. Newer versions
+    # (2.x) changed the API in breaking ways; pin to avoid surprises.
+    "moviepy==1.0.3",
 ]
 
 [project.optional-dependencies]
-video = [
-    "moviepy>=1.0.3",
-]
 tts = [
     "pyttsx3>=2.90",
 ]
@@ -39,11 +40,7 @@ ai = [
 dev = [
     "pytest>=7.0",
     "pytest-mock>=3.10",
-    "click>=8.0",
-    "python-dotenv>=1.0",
-    "requests>=2.28",
-    "rich>=13.0",
-    "Pillow>=9.0",
+    "pyttsx3>=2.90",
 ]
 
 [project.scripts]

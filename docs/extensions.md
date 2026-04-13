@@ -1,10 +1,10 @@
 ## Extensions
 
-This document describes optional extensions and future enhancements that can be added to `autovideo`.
+This document describes optional extensions and future enhancements that can be added to `clipforge`.
 
 ### AI Integration
 
-Support for different AI providers can be added by implementing subclasses of `AIProvider` in `src/autovideo/ai/providers`. Providers should generate scene plans and social packs as structured data.
+Support for different AI providers can be added by implementing subclasses of `AIProvider` in `src/clipforge/ai/providers`. Providers should generate scene plans and social packs as structured data.
 
 ### GUI Studio
 

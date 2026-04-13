@@ -1,37 +1,115 @@
-## Developer Guide
+# Developer Guide
 
-This document outlines the high‑level architecture of the `autovideo` project and provides guidance for contributors who want to extend or maintain the codebase.
+This document describes the architecture of ClipForge and how to extend it.
 
-### Project Structure
+---
 
-The project is organised into several key packages:
+## Project layout
 
-* `src/autovideo` – core functionality and CLI entry points.
-* `src/autovideo/commands` – individual CLI subcommands are implemented here, separated by concern.
-* `src/autovideo/ai` – optional artificial intelligence providers and abstractions that can be enabled via configuration.
-* `data` – JSON files containing static definitions for presets, styles, platforms and voices.
-* `assets` – placeholders for stock music, logos and images.
-* `tests` – unit tests covering the public API and individual components.
+```
+src/clipforge/
+├── cli.py              — Click group entry point; registers all commands
+├── constants.py        — Platform names, audio/text modes, defaults
+├── utils.py            — Shared helpers (slugify, ensure_dir, load_json, …)
+├── config_loader.py    — JSON config loading with defaults + validation
+├── script_parser.py    — Text → list of Scene objects
+├── scene_planner.py    — Scene list → planned scenes with visual_type/query
+├── builder.py          — MoviePy-based video assembler
+├── audio_engine.py     — Audio modes: silent/music/voiceover/voiceover+music
+├── text_engine.py      — Text overlays: subtitles, title cards
+├── social_pack.py      — Social media pack generator
+├── batch_runner.py     — Multi-job batch processor
+├── presets.py          — Preset loading and application
+├── ai/                 — Optional AI layer (off by default)
+│   ├── base.py         — AIProvider abstract class
+│   ├── factory.py      — Provider selection (returns None gracefully)
+│   ├── prompts.py      — Prompt templates
+│   ├── cache.py        — File-based response cache
+│   └── providers/      — openai / anthropic / gemini skeletons
+└── commands/           — One file per CLI subcommand
+```
 
-### Entry Points
+---
 
-The CLI entry point is defined in `src/autovideo/cli.py` and uses the `click` library to register subcommands. Each subcommand delegates work to a module within `autovideo/commands`.
+## Entry point
 
-### Adding a Command
+`clipforge.cli:main` is the Click group. All subcommands are imported from
+`clipforge.commands.*` and added with `main.add_command(...)`.
 
-1. Create a new file under `src/autovideo/commands` with a descriptive name (for example, `export_cmd.py`).
-2. Define a `cli` function decorated with `@click.command()` and accept any required options or arguments.
-3. Implement the command’s logic, delegating to core utilities in `autovideo` where possible.
-4. Register the command in `src/autovideo/cli.py` by importing it and adding it to the main group.
+The `clipforge` binary is declared in `pyproject.toml`:
 
-### Extending the AI Layer
+```toml
+[project.scripts]
+clipforge = "clipforge.cli:main"
+```
 
-Providers live under `src/autovideo/ai/providers`. To add support for a new provider:
+---
 
-1. Create a new file in that directory (e.g. `myprovider.py`) that subclasses `AIProvider`.
-2. Implement the required methods such as `generate_scene_plan` and `generate_social_pack`. These should return structured Python objects or dictionaries.
-3. Update `factory.py` to include your provider in the selection logic.
+## Rendering pipeline (`make` command)
 
-### Unit Tests
+```
+script text
+  → ScriptParser.parse()        — list[Scene]
+  → ScenePlanner.plan()         — list[planned_scene dicts]
+  → VideoBuilder.build()        — writes output.mp4
+      ├── _build_scene_clip()   — per-scene image/video clip
+      ├── TextEngine.add_text_overlay()   — subtitle/title_card overlay
+      └── AudioEngine.build_audio()       — audio track
+```
 
-Tests live under the `tests` directory and can be run with `pytest`. Each new module should have a corresponding test file with simple sanity checks. Use fixtures and mocks to isolate dependencies.
+**moviepy version:** ClipForge is tested against **moviepy 1.0.3**. The
+dependency is pinned in `pyproject.toml` and `requirements.txt`. moviepy 2.x
+is a breaking API change and is not supported.
+
+---
+
+## Adding a CLI command
+
+1. Create `src/clipforge/commands/mycommand.py`.
+2. Define a Click command function decorated with `@click.command("mycommand")`.
+3. Import it in `src/clipforge/cli.py` and register:
+   ```python
+   from clipforge.commands.mycommand import mycommand
+   main.add_command(mycommand)
+   ```
+4. Add a test in `tests/test_cli.py` using `CliRunner`.
+
+---
+
+## Extending the AI layer
+
+AI providers live under `src/clipforge/ai/providers/`. To add a new provider:
+
+1. Create `src/clipforge/ai/providers/myprovider.py` subclassing `AIProvider`
+   from `clipforge.ai.base`.
+2. Implement `generate(prompt, schema) -> dict`.
+3. Register it in `clipforge/ai/factory.py`.
+
+The project must continue to work when no provider is configured (`ai_mode=off`).
+`AIFactory.get_provider()` returns `None` when the provider is unknown or the
+key is missing — all callers must handle `None`.
+
+---
+
+## Running tests
+
+```bash
+pip install -e ".[dev,tts]"
+pytest tests/ -v
+```
+
+Tests are self-contained and do not require FFmpeg, moviepy, pyttsx3, or API
+keys. VideoBuilder and AudioEngine calls that touch moviepy/pyttsx3 are mocked.
+
+---
+
+## Code style
+
+- Black, line length 100 (`pyproject.toml`)
+- Type hints on all public functions
+- Docstrings on all public classes and methods
+- `from __future__ import annotations` at the top of every module
+
+```bash
+black src/ tests/
+```

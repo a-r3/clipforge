@@ -1,6 +1,6 @@
 # Configuration
 
-The `autovideo` command accepts many options to control how videos are produced. For complex projects you can store these options in a JSON configuration file.
+The `clipforge` command accepts many options to control how videos are produced. For complex projects you can store these options in a JSON configuration file.
 
 Example configuration:
 
@@ -18,4 +18,4 @@ Example configuration:
 }
 ```
 
-You can override any of these keys via command line options. See `autovideo --help` for details.
+You can override any of these keys via command line options. See `clipforge --help` for details.

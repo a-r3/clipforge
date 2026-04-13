@@ -1,9 +1,21 @@
+# Core runtime dependencies
+# Install with: pip install -e ".[dev]"
+# For TTS support: pip install -e ".[dev,tts]"
+
 click>=8.0
 python-dotenv>=1.0
 requests>=2.28
 rich>=13.0
 Pillow>=9.0
-moviepy>=1.0.3
+
+# Video rendering — pin to 1.0.3 (stable, tested, FFmpeg-compatible).
+# moviepy 2.x changed its API in breaking ways; do not upgrade without
+# testing the full render pipeline.
+moviepy==1.0.3
+
+# Optional but recommended
 pyttsx3>=2.90
+
+# Development / testing
 pytest>=7.0
 pytest-mock>=3.10

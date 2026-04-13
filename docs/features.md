@@ -1,6 +1,6 @@
 ## Features
 
-The `autovideo` tool provides a comprehensive workflow for turning text scripts into short‑form videos. Key features include:
+The `clipforge` tool provides a comprehensive workflow for turning text scripts into short‑form videos. Key features include:
 
 * Scene splitting and planning via a script parser and optional AI assistance.
 * Automatic search for royalty‑free stock media based on generated queries.
