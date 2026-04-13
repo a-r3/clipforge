@@ -1,0 +1,41 @@
+{
+  "platforms": [
+    {
+      "name": "reels",
+      "resolution": [1080, 1920],
+      "fps": 30
+    },
+    {
+      "name": "tiktok",
+      "resolution": [1080, 1920],
+      "fps": 30
+    },
+    {
+      "name": "youtube_shorts",
+      "resolution": [1080, 1920],
+      "fps": 30
+    },
+    {
+      "name": "youtube",
+      "resolution": [1920, 1080],
+      "fps": 30
+    }
+  ],
+  "styles": [
+    {
+      "name": "clean",
+      "font_size": 48,
+      "text_color": "white"
+    },
+    {
+      "name": "bold",
+      "font_size": 64,
+      "text_color": "yellow"
+    },
+    {
+      "name": "minimal",
+      "font_size": 40,
+      "text_color": "lightgrey"
+    }
+  ]
+}

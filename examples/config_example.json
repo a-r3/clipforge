@@ -1,0 +1,11 @@
+{
+  "script_file": "examples/script_example.txt",
+  "output": "output/demo.mp4",
+  "platform": "reels",
+  "style": "clean",
+  "audio_mode": "voiceover+music",
+  "text_mode": "subtitle",
+  "subtitle_mode": "word-by-word",
+  "music_file": "assets/music/background.mp3",
+  "auto_voice": true
+}

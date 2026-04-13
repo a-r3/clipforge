@@ -1,0 +1,16 @@
+{
+  "jobs": [
+    {
+      "script_file": "examples/script_example.txt",
+      "output": "output/demo1.mp4",
+      "platform": "reels",
+      "style": "clean"
+    },
+    {
+      "script_file": "examples/script_ai_example.txt",
+      "output": "output/demo2.mp4",
+      "platform": "tiktok",
+      "style": "bold"
+    }
+  ]
+}
