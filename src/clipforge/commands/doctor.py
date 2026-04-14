@@ -21,13 +21,26 @@ def _error(msg: str) -> None:
     click.echo(f"  [ERROR] {msg}")
 
 
+
 @click.command("doctor")
-@click.option("--config", "config_file", default=None, help="Config file to check against.")
+@click.option("--config", "config_file", default=None,
+              help="Also validate a specific config file.")
 def doctor(config_file: str | None) -> None:
-    """Check system requirements and configuration for ClipForge."""
-    click.echo("ClipForge Doctor\n" + "=" * 40)
+    """Check that your system is ready to use ClipForge.
+
+    Checks Python version, FFmpeg, .env file, API keys, and packages.
+    Run this after installation, or whenever something seems broken.
+
+    Examples:
+
+      clipforge doctor
+      clipforge doctor --config myconfig.json
+    """
+    click.echo("\n  ClipForge Doctor")
+    click.echo("  " + "─" * 38)
     all_ok = True
 
+    click.echo()
     # 1. Python version
     version = sys.version_info
     if version >= (3, 10):
@@ -132,8 +145,18 @@ def doctor(config_file: str | None) -> None:
         except ImportError:
             _warn(f"Package '{pip_name}' not installed (optional: pip install {pip_name}).")
 
-    click.echo("\n" + "=" * 40)
+    click.echo("\n  " + "─" * 38)
     if all_ok:
-        click.echo("All checks passed. ClipForge is ready!")
+        click.echo("  All checks passed. ClipForge is ready!\n")
+        click.echo("  Quick start:")
+        click.echo("    clipforge wizard                    # create a config interactively")
+        click.echo("    clipforge make --script-file script.txt --dry-run  # preview")
+        click.echo("    clipforge make --script-file script.txt            # build video")
     else:
-        click.echo("Some checks failed. Please resolve the errors above.")
+        click.echo("  Some checks failed. See [ERROR] and [WARN] lines above.")
+        click.echo()
+        click.echo("  Common fixes:")
+        click.echo("    FFmpeg missing  → sudo apt install ffmpeg  (or brew install ffmpeg)")
+        click.echo("    .env missing    → cp .env.example .env  (then add your API keys)")
+        click.echo("    Package missing → pip install -e '.[tts]'  (or pip install clipforge)")
+    click.echo()

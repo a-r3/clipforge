@@ -61,32 +61,41 @@ class MediaFetcher:
     ) -> tuple[str | None, str]:
         """Fetch the best available media for *scene*.
 
+        Tries the primary query first, then alternate_queries in order.
+
         Returns:
             (local_path, source) where source is one of:
             "pexels_video", "pexels_image", "pixabay_video",
             "pixabay_image", or "fallback".
         """
-        query = scene.get("query", "abstract background")
+        primary_query = scene.get("primary_query") or scene.get("query", "abstract background")
+        alternate_queries: list[str] = scene.get("alternate_queries", [])
+        queries = [primary_query] + [q for q in alternate_queries if q and q != primary_query]
 
-        if self._pexels_key:
-            path = self._try_pexels_video(query, width, height)
-            if path:
-                return path, "pexels_video"
-            path = self._try_pexels_image(query)
-            if path:
-                return path, "pexels_image"
-        else:
-            logger.debug("PEXELS_API_KEY not set — skipping Pexels search.")
+        for query in queries:
+            if self._pexels_key:
+                path = self._try_pexels_video(query, width, height)
+                if path:
+                    return path, "pexels_video"
+                path = self._try_pexels_image(query)
+                if path:
+                    return path, "pexels_image"
+            else:
+                logger.debug("PEXELS_API_KEY not set — skipping Pexels search.")
 
-        if self._pixabay_key:
-            path = self._try_pixabay_video(query)
-            if path:
-                return path, "pixabay_video"
-            path = self._try_pixabay_image(query)
-            if path:
-                return path, "pixabay_image"
-        else:
-            logger.debug("PIXABAY_API_KEY not set — skipping Pixabay search.")
+            if self._pixabay_key:
+                path = self._try_pixabay_video(query)
+                if path:
+                    return path, "pixabay_video"
+                path = self._try_pixabay_image(query)
+                if path:
+                    return path, "pixabay_image"
+            else:
+                logger.debug("PIXABAY_API_KEY not set — skipping Pixabay search.")
+
+            # Only log alternate attempts after the first
+            if query != primary_query:
+                logger.debug("Primary query failed, trying alternate: %r", query)
 
         return None, "fallback"
 

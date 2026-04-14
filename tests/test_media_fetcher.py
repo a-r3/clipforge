@@ -201,3 +201,82 @@ def test_pick_best_video_file_skips_entries_without_link(tmp_path):
     files = [{"width": 1080, "height": 1920}, {"link": "ok.mp4", "width": 720, "height": 1280}]
     result = fetcher._pick_best_video_file(files, 720, 1280)
     assert result["link"] == "ok.mp4"
+
+
+# ---------------------------------------------------------------------------
+# V2 alternate query tests
+# ---------------------------------------------------------------------------
+
+def test_fetch_tries_alternate_queries_on_primary_failure(tmp_path):
+    """fetch_for_scene should try alternate_queries when primary fails."""
+    fetcher = _make_fetcher(pexels="key123", tmp_path=tmp_path)
+
+    call_count = {"n": 0}
+    video_url = "https://example.com/video.mp4"
+
+    def fake_get_json(url, params=None, headers=None):
+        call_count["n"] += 1
+        # First call (primary query) returns no results
+        if call_count["n"] == 1:
+            return {"videos": []}
+        # Second call (first alternate) returns a result
+        return _pexels_video_response(video_id=99, link=video_url)
+
+    def fake_download(url, filename):
+        dest = tmp_path / "downloads" / filename
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(b"fake")
+        return str(dest)
+
+    fetcher._get_json = fake_get_json
+    fetcher._download = fake_download
+
+    scene = {
+        "primary_query": "primary query",
+        "alternate_queries": ["alternate query one", "alternate query two"],
+    }
+    path, source = fetcher.fetch_for_scene(scene, 1080, 1920)
+    assert path is not None
+    assert source == "pexels_video"
+    # Verify we made at least 2 API calls (primary failed, alternate succeeded)
+    assert call_count["n"] >= 2
+
+
+def test_fetch_uses_primary_query_field(tmp_path):
+    """fetch_for_scene should prefer primary_query over legacy query field."""
+    fetcher = _make_fetcher(pexels="key", tmp_path=tmp_path)
+
+    used_queries = []
+
+    def fake_get_json(url, params=None, headers=None):
+        if params:
+            used_queries.append(params.get("query", ""))
+        return {"videos": []}
+
+    fetcher._get_json = fake_get_json
+
+    scene = {
+        "query": "old query",
+        "primary_query": "new primary query",
+        "alternate_queries": [],
+    }
+    fetcher.fetch_for_scene(scene, 1080, 1920)
+    assert used_queries and used_queries[0] == "new primary query"
+
+
+def test_fetch_falls_back_to_query_when_no_primary(tmp_path):
+    """fetch_for_scene should use legacy 'query' if primary_query is absent."""
+    fetcher = _make_fetcher(pexels="key", tmp_path=tmp_path)
+
+    used_queries = []
+
+    def fake_get_json(url, params=None, headers=None):
+        if params:
+            used_queries.append(params.get("query", ""))
+        return {"videos": []}
+
+    fetcher._get_json = fake_get_json
+
+    scene = {"query": "legacy query", "alternate_queries": []}
+    fetcher.fetch_for_scene(scene, 1080, 1920)
+    assert used_queries and used_queries[0] == "legacy query"

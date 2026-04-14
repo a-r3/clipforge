@@ -7,6 +7,7 @@ generation and MoviePy for compositing onto video clips.
 from __future__ import annotations
 
 import logging
+import textwrap
 from typing import Any
 
 from clipforge.constants import (
@@ -25,36 +26,56 @@ _STYLE_DEFAULTS: dict[str, dict[str, Any]] = {
     "clean": {
         "font_size": 48,
         "font_color": "white",
+        "highlight_color": "#4fc3f7",
         "bg_color": (0, 0, 0, 160),
         "stroke_color": "black",
         "stroke_width": 2,
         "position": ("center", 0.8),
+        "wrap_width": 35,
     },
     "bold": {
         "font_size": 64,
         "font_color": "yellow",
+        "highlight_color": "#ff4400",
         "bg_color": (0, 0, 0, 200),
         "stroke_color": "black",
         "stroke_width": 3,
         "position": ("center", 0.75),
+        "wrap_width": 28,
     },
     "minimal": {
         "font_size": 40,
         "font_color": "white",
+        "highlight_color": "#aaaaaa",
         "bg_color": (0, 0, 0, 80),
         "stroke_color": "black",
         "stroke_width": 1,
         "position": ("center", 0.85),
+        "wrap_width": 40,
     },
     "cinematic": {
         "font_size": 52,
         "font_color": "white",
+        "highlight_color": "#e0c97f",
         "bg_color": (0, 0, 0, 180),
         "stroke_color": "black",
         "stroke_width": 2,
         "position": ("center", 0.80),
+        "wrap_width": 32,
     },
 }
+
+
+def _wrap_text(text: str, width: int) -> str:
+    """Wrap text to *width* characters, preserving existing line breaks."""
+    lines = text.splitlines()
+    wrapped: list[str] = []
+    for line in lines:
+        if len(line) <= width:
+            wrapped.append(line)
+        else:
+            wrapped.extend(textwrap.wrap(line, width=width) or [line])
+    return "\n".join(wrapped)
 
 
 class TextEngine:
@@ -118,8 +139,10 @@ class TextEngine:
 
     def _static_subtitle(self, clip: Any, text: str, style_cfg: dict) -> Any:
         """Add a static subtitle to the clip."""
+        wrap_width = style_cfg.get("wrap_width", 35)
+        wrapped = _wrap_text(text, wrap_width)
         txt_clip = self._make_text_clip(
-            text=text,
+            text=wrapped,
             duration=clip.duration,
             font_size=style_cfg["font_size"],
             color=style_cfg["font_color"],
@@ -157,39 +180,74 @@ class TextEngine:
         return self._composite_clips(clip, sub_clips)
 
     def _word_by_word_subtitle(self, clip: Any, text: str, style_cfg: dict) -> Any:
-        """Show one word at a time, centred on screen."""
+        """Show words one at a time with the current word highlighted.
+
+        Displays the full sentence with the current word rendered in the
+        highlight_color to draw the viewer's eye, like teleprompter-style
+        karaoke subtitles.
+        """
         duration = clip.duration
         words = text.split()
         if not words:
             return clip
 
+        wrap_width = style_cfg.get("wrap_width", 35)
         word_duration = duration / len(words)
         sub_clips = []
-        for i, word in enumerate(words):
+        highlight_color = style_cfg.get("highlight_color", "yellow")
+        position = style_cfg["position"]
+
+        for i, current_word in enumerate(words):
             start_time = i * word_duration
+            # Build context: show up to 6 words around current word
+            window_start = max(0, i - 2)
+            window_end = min(len(words), i + 4)
+            context_words = words[window_start:window_end]
+            context_text = " ".join(context_words)
+            wrapped = _wrap_text(context_text, wrap_width)
+
+            # Use highlight color for the current word if it appears in context
+            if current_word in context_words:
+                display_color = highlight_color
+            else:
+                display_color = style_cfg["font_color"]
+
             sub_clip = self._make_text_clip(
-                text=word,
+                text=wrapped,
                 duration=word_duration,
-                font_size=style_cfg["font_size"] + 10,
-                color=style_cfg["font_color"],
+                font_size=style_cfg["font_size"],
+                color=display_color,
                 stroke_color=style_cfg["stroke_color"],
                 stroke_width=style_cfg["stroke_width"],
                 width=clip.w,
             ).set_start(start_time)
-            sub_clips.append(sub_clip.set_position(("center", "center")))
+            sub_clips.append(sub_clip.set_position(position))
 
+        if not sub_clips:
+            return clip
         return self._composite_clips(clip, sub_clips)
 
     def _add_title_card(self, clip: Any, text: str, style_cfg: dict) -> Any:
-        """Add a full-screen title card that fades in."""
+        """Add a centred title card with improved layout.
+
+        Short text (≤6 words) is displayed large and centred.
+        Longer text is wrapped and displayed at 80% of the title size.
+        """
+        words = text.split()
+        wrap_width = style_cfg.get("wrap_width", 28)
+        wrapped = _wrap_text(text, wrap_width)
+
+        # Larger font for short punchy titles; slightly smaller for longer ones
+        font_size = style_cfg["font_size"] + (16 if len(words) <= 6 else 4)
+
         txt_clip = self._make_text_clip(
-            text=text,
+            text=wrapped,
             duration=clip.duration,
-            font_size=style_cfg["font_size"] + 12,
+            font_size=font_size,
             color=style_cfg["font_color"],
             stroke_color=style_cfg["stroke_color"],
             stroke_width=style_cfg["stroke_width"],
-            width=clip.w,
+            width=int(clip.w * 0.85),  # 85% width for margins
         ).set_position(("center", "center"))
 
         return self._composite_clips(clip, [txt_clip])

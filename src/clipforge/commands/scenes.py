@@ -8,17 +8,30 @@ import click
 
 
 @click.command("scenes")
-@click.option("--script-file", "-s", required=False, help="Path to script text file.")
-@click.option("--script-text", "-t", default="", help="Inline script text.")
-@click.option("--max-scenes", default=15, show_default=True, help="Maximum scenes to parse.")
-@click.option("--json-output", is_flag=True, default=False, help="Output as JSON.")
+@click.option("--script-file", "-s", required=False,
+              help="Path to your script text file.")
+@click.option("--script-text", "-t", default="",
+              help="Inline script text (alternative to --script-file).")
+@click.option("--max-scenes", default=15, show_default=True,
+              help="Maximum number of scenes to parse.")
+@click.option("--json-output", is_flag=True, default=False,
+              help="Output the scene breakdown as JSON.")
 def scenes(
     script_file: str | None,
     script_text: str,
     max_scenes: int,
     json_output: bool,
 ) -> None:
-    """Parse a script and display the scene breakdown."""
+    """Preview how your script will be split into scenes.
+
+    Use this before rendering to understand what visuals will be searched
+    for and how long each scene will be.
+
+    Examples:
+
+      clipforge scenes --script-file script.txt
+      clipforge scenes --script-file script.txt --json-output
+    """
     from clipforge.script_parser import ScriptParser
 
     # Load script

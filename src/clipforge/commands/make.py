@@ -8,26 +8,37 @@ import click
 
 
 @click.command("make")
-@click.option("--script-file", "-s", default=None, help="Path to script text file.")
-@click.option("--config", "-c", "config_file", default=None, help="Path to config JSON file.")
-@click.option("--output", "-o", default=None, help="Output video path (e.g. output/video.mp4).")
+@click.option("--script-file", "-s", default=None,
+              help="Path to your script text file.")
+@click.option("--config", "-c", "config_file", default=None,
+              help="Path to a JSON config file (see clipforge init-config).")
+@click.option("--output", "-o", default=None,
+              help="Output video path. Default: output/video.mp4")
 @click.option("--platform", "-p", default=None,
               type=click.Choice(["reels", "tiktok", "youtube-shorts", "youtube", "landscape"]),
-              help="Target platform.")
-@click.option("--preset", default=None, help="Apply a named preset.")
-@click.option("--style", default=None, help="Visual style (clean, bold, minimal, cinematic).")
+              help="Target platform. Sets aspect ratio and smart defaults. Default: reels")
+@click.option("--preset", default=None,
+              help="Apply a named style preset (clean, bold, minimal, cinematic). "
+                   "Run 'clipforge presets' to see all options.")
+@click.option("--style", default=None,
+              help="Visual style: clean, bold, minimal, or cinematic.")
 @click.option("--audio-mode", default=None,
               type=click.Choice(["silent", "music", "voiceover", "voiceover+music"]),
-              help="Audio mode.")
+              help="Audio: silent | music | voiceover | voiceover+music")
 @click.option("--text-mode", default=None,
               type=click.Choice(["none", "subtitle", "title_cards"]),
-              help="Text overlay mode.")
+              help="Text overlay: none | subtitle | title_cards")
 @click.option("--subtitle-mode", default=None,
               type=click.Choice(["static", "typewriter", "word-by-word"]),
-              help="Subtitle animation mode.")
-@click.option("--music-file", default=None, help="Path to background music file.")
-@click.option("--brand-name", default=None, help="Brand name for overlays.")
-@click.option("--dry-run", is_flag=True, default=False, help="Parse and plan without rendering.")
+              help="Subtitle style: static | typewriter | word-by-word")
+@click.option("--music-file", default=None,
+              help="Path to a background music file (.mp3/.wav).")
+@click.option("--brand-name", default=None,
+              help="Your brand name (shown in social pack and overlays).")
+@click.option("--profile", default=None,
+              help="Path to a brand profile JSON (see clipforge init-profile).")
+@click.option("--dry-run", is_flag=True, default=False,
+              help="Preview the scene plan without rendering the video.")
 def make(
     script_file: str | None,
     config_file: str | None,
@@ -40,14 +51,28 @@ def make(
     subtitle_mode: str | None,
     music_file: str | None,
     brand_name: str | None,
+    profile: str | None,
     dry_run: bool,
 ) -> None:
-    """Build a short video from a script."""
+    """Build a short video from a script.
+
+    Minimal usage:
+
+      clipforge make --script-file script.txt
+
+    With a config file:
+
+      clipforge make --config myconfig.json
+
+    Dry-run to preview the plan without rendering:
+
+      clipforge make --script-file script.txt --dry-run
+    """
     from clipforge.config_loader import load_config, ConfigLoader
     from clipforge.script_parser import ScriptParser
     from clipforge.scene_planner import ScenePlanner
 
-    # Build config
+    # Build overrides from CLI flags (None values are stripped inside load_config)
     overrides = {
         k: v for k, v in {
             "script_file": script_file,
@@ -65,6 +90,17 @@ def make(
 
     config = load_config(config_file, overrides)
 
+    # Apply brand profile (fills missing keys without overriding explicit values)
+    if profile:
+        import os
+        if not os.path.exists(profile):
+            click.echo(f"Error: Profile file not found: {profile}", err=True)
+            sys.exit(1)
+        from clipforge.profile import BrandProfile
+        bp = BrandProfile.load(profile)
+        config = bp.apply_to_config(config)
+        click.echo(f"Profile applied : {profile} (brand: {bp.brand_name or 'unnamed'})")
+
     # Validate config
     errors = ConfigLoader().validate(config)
     if errors:
@@ -78,11 +114,12 @@ def make(
         p = Presets()
         try:
             config = p.apply_preset(config, preset)
+            click.echo(f"Preset applied  : {preset}")
         except KeyError as exc:
             click.echo(f"Error: {exc}", err=True)
             sys.exit(1)
 
-    # Find script
+    # Find script text
     script_path = config.get("script_file", "")
     script_text = config.get("script_text", "")
 
@@ -96,7 +133,9 @@ def make(
 
     if not script_text.strip():
         click.echo(
-            "Error: No script provided. Use --script-file or set script_file in config.",
+            "Error: No script provided.\n"
+            "  Use --script-file path/to/script.txt\n"
+            "  Or set script_file in a config JSON (see clipforge init-config).",
             err=True,
         )
         sys.exit(1)
@@ -106,10 +145,14 @@ def make(
     scenes = parser.parse(script_text)
     scene_dicts = [s.to_dict() for s in scenes]
 
-    click.echo(f"Parsed {len(scenes)} scene(s).")
+    # Show what was auto-selected so the user knows what's happening
+    _echo_selected_settings(config)
+    click.echo(f"Scenes parsed   : {len(scenes)}")
 
     # Plan scenes
-    planner = ScenePlanner(ai_mode=config.get("ai_mode", "off"))
+    from clipforge.ai.factory import AIFactory
+    ai_provider = AIFactory.from_config(config)
+    planner = ScenePlanner(ai_mode=config.get("ai_mode", "off"), ai_provider=ai_provider)
     planned = planner.plan(scene_dicts)
 
     if dry_run:
@@ -118,7 +161,7 @@ def make(
 
     # Build video
     output_path = config.get("output", "output/video.mp4")
-    click.echo(f"Building video  -> {output_path}")
+    click.echo(f"\nRendering video ...")
 
     try:
         from clipforge.builder import VideoBuilder
@@ -126,23 +169,42 @@ def make(
         summary = builder.build(planned, config, output_path)
         summary.print()
     except Exception as exc:
-        click.echo(f"Error building video: {exc}", err=True)
+        click.echo(f"\nError building video: {exc}", err=True)
         sys.exit(1)
+
+
+def _echo_selected_settings(config: dict) -> None:
+    """Print the key settings being used, clearly marking auto-selected ones."""
+    platform = config.get("platform", "reels")
+    style = config.get("style", "clean")
+    audio = config.get("audio_mode", "silent")
+    text = config.get("text_mode", "subtitle")
+    subtitle = config.get("subtitle_mode", "static")
+
+    click.echo(
+        f"Platform        : {platform}  |  "
+        f"style={style}  audio={audio}  text={text}/{subtitle}"
+    )
 
 
 def _print_dry_run(planned: list, config: dict) -> None:
     """Print a dry-run scene plan."""
-    click.echo("Dry run — planned scenes:")
+    click.echo("\nDry run — planned scenes:")
     total = 0.0
     for i, scene in enumerate(planned, 1):
         dur = scene["duration"]
         total += dur
+        conf = scene.get("confidence", 0.0)
+        conf_str = f" conf={conf:.0%}" if conf else ""
         click.echo(
-            f"  Scene {i:2d}: [{scene['visual_type']:12s}] {scene['query']!r:<40s} ({dur:.1f}s)"
+            f"  Scene {i:2d}: [{scene['visual_type']:12s}] "
+            f"{scene.get('primary_query', scene['query'])!r:<40s} "
+            f"({dur:.1f}s{conf_str})"
         )
     click.echo(
-        f"\nTotal: {len(planned)} scene(s), ~{total:.1f}s  |  "
-        f"audio={config.get('audio_mode','silent')}  "
-        f"text={config.get('text_mode','none')}  "
-        f"platform={config.get('platform','reels')}"
+        f"\nTotal : {len(planned)} scene(s), ~{total:.1f}s"
+        f"  platform={config.get('platform','reels')}"
+        f"  audio={config.get('audio_mode','silent')}"
+        f"  text={config.get('text_mode','none')}"
     )
+    click.echo("\nRun without --dry-run to render the video.")

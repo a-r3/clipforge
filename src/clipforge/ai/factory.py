@@ -63,3 +63,32 @@ class AIFactory:
         except Exception as exc:
             logger.warning("Failed to initialise AI provider '%s': %s", provider_name, exc)
             return None
+
+    @classmethod
+    def from_config(cls, config: dict) -> "AIProvider | None":
+        """Create an AI provider from a ClipForge config dict.
+
+        Reads ai_provider and ai_mode from config; reads API key from env.
+        Returns None if ai_mode is 'off' or provider is unavailable.
+        """
+        import os
+        from clipforge.constants import AI_OFF
+
+        ai_mode = config.get("ai_mode", AI_OFF)
+        if ai_mode == AI_OFF:
+            return None
+
+        provider_name = config.get("ai_provider", "")
+        model = config.get("ai_model", "")
+
+        key_env_map = {
+            "openai": "OPENAI_API_KEY",
+            "anthropic": "ANTHROPIC_API_KEY",
+            "claude": "ANTHROPIC_API_KEY",
+            "gemini": "GEMINI_API_KEY",
+            "google": "GEMINI_API_KEY",
+        }
+        env_var = key_env_map.get((provider_name or "").lower(), "")
+        api_key = os.environ.get(env_var, "") if env_var else ""
+
+        return cls.get_provider(provider_name, api_key=api_key, model=model)

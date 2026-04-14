@@ -45,3 +45,26 @@ Scene: {text}
 
 Respond with only the search query string, nothing else.
 """
+
+SCENE_PLAN_PROMPT_V2 = """\
+You are a video scene planner. Given a scene's text, keywords, and an initial
+local analysis, refine the visual type and stock footage search queries.
+
+Scene text:
+{text}
+
+Keywords: {keywords}
+
+Local analysis — visual type: {local_visual_type}
+Local queries: {local_queries}
+
+Visual types available: technology, business, people, city, nature, abstract
+
+Respond with a JSON object with exactly these keys:
+- visual_type: one of the types above (keep the local type if it looks correct)
+- primary_query: the single best 2-5 word stock footage search query
+- alternate_queries: list of 2-3 alternative queries in case the primary fails
+
+Example response:
+{{"visual_type": "technology", "primary_query": "AI data visualization", "alternate_queries": ["machine learning abstract", "digital technology background"]}}
+"""

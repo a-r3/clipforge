@@ -205,6 +205,37 @@ class SocialPackGenerator:
             hashtags=hashtags,
         )
 
+        # V2: produce variants (multiple options for A/B testing / scheduling)
+        hook_variants = [_build_hook(script) for _ in range(3)]
+        # Deduplicate while preserving first
+        seen_hooks: set[str] = set()
+        unique_hooks: list[str] = []
+        for h in [hook] + hook_variants:
+            if h not in seen_hooks:
+                seen_hooks.add(h)
+                unique_hooks.append(h)
+        hook_variants = unique_hooks[:3]
+
+        cta_variants = cta_list[:3]
+
+        # Title variants: with/without brand prefix and with different truncation
+        topic = _extract_topic(script)
+        topic_cap = " ".join(w.capitalize() for w in topic.split())
+        title_base = topic_cap[:70]
+        title_variants = [
+            f"{brand_name}: {title_base}" if brand_name else title_base,
+            title_base,
+            f"{title_base} — {brand_name}" if brand_name else title_base,
+        ]
+        # Deduplicate
+        seen_titles: set[str] = set()
+        unique_titles: list[str] = []
+        for t in title_variants:
+            if t not in seen_titles:
+                seen_titles.add(t)
+                unique_titles.append(t)
+        title_variants = unique_titles[:3]
+
         return {
             "title": title,
             "caption": caption,
@@ -213,6 +244,10 @@ class SocialPackGenerator:
             "hashtags": hashtags,
             "platform": platform,
             "brand_name": brand_name,
+            # V2 variant fields
+            "title_variants": title_variants,
+            "hook_variants": hook_variants,
+            "cta_variants": cta_variants,
         }
 
 

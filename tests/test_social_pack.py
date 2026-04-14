@@ -151,3 +151,58 @@ def test_save_txt(tmp_path):
     assert "TITLE" in text
     assert "HASHTAGS" in text
     assert pack["hashtags"] in text
+
+
+# ---------------------------------------------------------------------------
+# V2 variant tests
+# ---------------------------------------------------------------------------
+
+
+def test_generate_has_title_variants():
+    """V2: generate() should include title_variants list."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config(brand="Brand"))
+    assert "title_variants" in result
+    assert isinstance(result["title_variants"], list)
+    assert len(result["title_variants"]) >= 1
+
+
+def test_generate_has_hook_variants():
+    """V2: generate() should include hook_variants list."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config())
+    assert "hook_variants" in result
+    assert isinstance(result["hook_variants"], list)
+    assert len(result["hook_variants"]) >= 1
+
+
+def test_generate_has_cta_variants():
+    """V2: generate() should include cta_variants list."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config())
+    assert "cta_variants" in result
+    assert isinstance(result["cta_variants"], list)
+    assert len(result["cta_variants"]) >= 1
+
+
+def test_title_is_first_title_variant():
+    """V2: title field should be the first item in title_variants (backward compat)."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config(brand="Compat"))
+    assert result["title"] == result["title_variants"][0]
+
+
+def test_title_variants_contain_brand():
+    """V2: at least one title variant should contain the brand name."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config(brand="UniqueBrand"))
+    any_has_brand = any("UniqueBrand" in t for t in result["title_variants"])
+    assert any_has_brand
+
+
+def test_hook_variants_are_strings():
+    """V2: all hook variants should be non-empty strings."""
+    gen = SocialPackGenerator()
+    result = gen.generate(SAMPLE_SCENES, _make_config())
+    for h in result["hook_variants"]:
+        assert isinstance(h, str) and len(h.strip()) > 0

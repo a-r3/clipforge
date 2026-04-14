@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from clipforge.config_loader import ConfigLoader, load_config
+from clipforge.config_loader import ConfigLoader, load_config, _apply_smart_defaults
 
 
 class TestConfigLoader:
@@ -147,3 +147,76 @@ class TestLoadConfigFunction:
     def test_applies_overrides(self):
         config = load_config(overrides={"platform": "tiktok"})
         assert config["platform"] == "tiktok"
+
+
+class TestSmartDefaults:
+    """Tests for platform-aware smart defaults (v0.4 UX pass)."""
+
+    def test_reels_gets_bold_style(self):
+        config = _apply_smart_defaults(
+            {"platform": "reels", "style": "clean"},  # style is still at baseline
+            explicit_keys={"platform"},               # style was NOT set explicitly
+        )
+        assert config["style"] == "bold"
+
+    def test_reels_gets_word_by_word_subtitle(self):
+        config = _apply_smart_defaults(
+            {"platform": "reels", "subtitle_mode": "static"},
+            explicit_keys={"platform"},
+        )
+        assert config["subtitle_mode"] == "word-by-word"
+
+    def test_tiktok_gets_word_by_word(self):
+        config = _apply_smart_defaults(
+            {"platform": "tiktok", "subtitle_mode": "static"},
+            explicit_keys={"platform"},
+        )
+        assert config["subtitle_mode"] == "word-by-word"
+
+    def test_youtube_keeps_static_subtitle(self):
+        config = _apply_smart_defaults(
+            {"platform": "youtube", "subtitle_mode": "static"},
+            explicit_keys={"platform"},
+        )
+        assert config["subtitle_mode"] == "static"
+
+    def test_explicit_style_not_overridden(self):
+        """User-set style must not be replaced by smart default."""
+        config = _apply_smart_defaults(
+            {"platform": "reels", "style": "minimal"},
+            explicit_keys={"platform", "style"},  # style was set explicitly
+        )
+        assert config["style"] == "minimal"
+
+    def test_explicit_subtitle_mode_not_overridden(self):
+        config = _apply_smart_defaults(
+            {"platform": "tiktok", "subtitle_mode": "typewriter"},
+            explicit_keys={"platform", "subtitle_mode"},
+        )
+        assert config["subtitle_mode"] == "typewriter"
+
+    def test_load_config_applies_smart_defaults_for_reels(self):
+        """load_config with platform=reels should auto-select bold+word-by-word."""
+        config = load_config(overrides={"platform": "reels"})
+        assert config["style"] == "bold"
+        assert config["subtitle_mode"] == "word-by-word"
+
+    def test_load_config_explicit_style_wins_over_smart(self):
+        """Explicit style override must not be replaced."""
+        config = load_config(overrides={"platform": "reels", "style": "minimal"})
+        assert config["style"] == "minimal"
+
+    def test_unknown_platform_no_crash(self):
+        """Unknown platform should not crash — just returns config unchanged."""
+        config = _apply_smart_defaults(
+            {"platform": "snapchat", "style": "clean"},
+            explicit_keys={"platform"},
+        )
+        assert isinstance(config, dict)
+
+    def test_landscape_gets_cinematic_style(self):
+        config = _apply_smart_defaults(
+            {"platform": "landscape", "style": "clean"},
+            explicit_keys={"platform"},
+        )
+        assert config["style"] == "cinematic"

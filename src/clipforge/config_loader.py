@@ -20,11 +20,12 @@ from clipforge.constants import (
     DEFAULT_AI_MODE,
     DEFAULT_MUSIC_VOLUME,
     DEFAULT_MAX_SCENES,
+    VERTICAL_PLATFORMS,
 )
 from clipforge.utils import merge_dicts, load_json
 
 
-# Default configuration values
+# Default configuration values — baseline before smart-defaults are applied
 _DEFAULTS: dict[str, Any] = {
     "script_file": "",
     "output": "output/video.mp4",
@@ -40,13 +41,58 @@ _DEFAULTS: dict[str, Any] = {
     "intro_text": "",
     "outro_text": "",
     "logo_file": "",
-    "watermark_position": "top-right",
+    "watermark_position": "bottom-right",
     "ai_mode": DEFAULT_AI_MODE,
     "ai_provider": "",
     "ai_model": "",
     "max_scenes": DEFAULT_MAX_SCENES,
     "brand_name": "",
 }
+
+# Platform-specific smart defaults applied on top of _DEFAULTS when a field
+# has not been explicitly set by the user.
+_PLATFORM_SMART_DEFAULTS: dict[str, dict[str, Any]] = {
+    "reels": {
+        "text_mode": "subtitle",
+        "subtitle_mode": "word-by-word",
+        "style": "bold",
+    },
+    "tiktok": {
+        "text_mode": "subtitle",
+        "subtitle_mode": "word-by-word",
+        "style": "bold",
+    },
+    "youtube-shorts": {
+        "text_mode": "subtitle",
+        "subtitle_mode": "static",
+        "style": "clean",
+    },
+    "youtube": {
+        "text_mode": "subtitle",
+        "subtitle_mode": "static",
+        "style": "clean",
+    },
+    "landscape": {
+        "text_mode": "subtitle",
+        "subtitle_mode": "static",
+        "style": "cinematic",
+    },
+}
+
+
+def _apply_smart_defaults(config: dict[str, Any], explicit_keys: set[str]) -> dict[str, Any]:
+    """Apply platform-aware smart defaults for any keys the user did NOT explicitly set.
+
+    Only fills in keys that are still equal to the baseline _DEFAULTS value AND
+    were not passed explicitly, so the user always wins.
+    """
+    platform = config.get("platform", DEFAULT_PLATFORM)
+    platform_defaults = _PLATFORM_SMART_DEFAULTS.get(platform, {})
+    result = dict(config)
+    for key, smart_value in platform_defaults.items():
+        if key not in explicit_keys and result.get(key) == _DEFAULTS.get(key):
+            result[key] = smart_value
+    return result
 
 
 class ConfigLoader:
@@ -58,6 +104,10 @@ class ConfigLoader:
     def load(self, path: str | Path | None = None, overrides: dict[str, Any] | None = None) -> dict[str, Any]:
         """Load config from *path* (optional), apply *overrides*, and return merged config.
 
+        Smart defaults are applied for any field the user did not explicitly set:
+        - Vertical platforms (reels, tiktok) default to bold style + word-by-word subtitles
+        - Landscape/YouTube platforms default to clean style + static subtitles
+
         Args:
             path: Path to a JSON config file.  If None, only defaults are used.
             overrides: Dict of values to override after file loading.
@@ -67,15 +117,24 @@ class ConfigLoader:
         """
         config = dict(self._defaults)
 
+        # Track which keys were set explicitly (file or CLI), so smart defaults
+        # only fill in genuinely missing ones.
+        explicit_keys: set[str] = set()
+
         if path is not None:
             file_data = load_json(path)
             if file_data:
+                explicit_keys.update(file_data.keys())
                 config = merge_dicts(config, file_data)
 
         if overrides:
             # Strip None values so missing CLI flags don't override file values
             clean_overrides = {k: v for k, v in overrides.items() if v is not None}
+            explicit_keys.update(clean_overrides.keys())
             config = merge_dicts(config, clean_overrides)
+
+        # Apply smart platform-aware defaults for anything not set explicitly
+        config = _apply_smart_defaults(config, explicit_keys)
 
         return config
 
