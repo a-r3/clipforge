@@ -1,0 +1,17 @@
+{
+  "name": "educational",
+  "label": "Educational / Explainer",
+  "description": "Step-by-step educational content and how-tos. Clean style, static subtitles for readability.",
+  "platform": "youtube-shorts",
+  "style": "clean",
+  "audio_mode": "voiceover",
+  "text_mode": "subtitle",
+  "subtitle_mode": "static",
+  "music_volume": 0.05,
+  "max_scenes": 12,
+  "intro_text": "",
+  "outro_text": "Subscribe for more explainers",
+  "sample_script": "Here are three things most people get wrong about this topic.\n\nFirst, they assume the basic approach always works.\n\nSecond, they ignore the edge cases that matter most.\n\nThird, they forget to measure the results.",
+  "suggested_hashtags": ["#education", "#learning", "#howto", "#explained", "#tips"],
+  "visual_hints": ["whiteboard presentation", "person explaining", "classroom", "infographic"]
+}

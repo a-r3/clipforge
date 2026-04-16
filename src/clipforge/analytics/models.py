@@ -16,7 +16,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 VALID_DATA_SOURCES = {"api", "mock", "manual", "stub"}
 
 

@@ -68,9 +68,9 @@ def make(
 
       clipforge make --script-file script.txt --dry-run
     """
-    from clipforge.config_loader import load_config, ConfigLoader
-    from clipforge.script_parser import ScriptParser
+    from clipforge.config_loader import ConfigLoader, load_config
     from clipforge.scene_planner import ScenePlanner
+    from clipforge.script_parser import ScriptParser
 
     # Build overrides from CLI flags (None values are stripped inside load_config)
     overrides = {
@@ -161,7 +161,7 @@ def make(
 
     # Build video
     output_path = config.get("output", "output/video.mp4")
-    click.echo(f"\nRendering video ...")
+    click.echo("\nRendering video ...")
 
     try:
         from clipforge.builder import VideoBuilder

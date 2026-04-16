@@ -11,12 +11,12 @@ import textwrap
 from typing import Any
 
 from clipforge.constants import (
-    TEXT_NONE,
-    TEXT_SUBTITLE,
-    TEXT_TITLE_CARDS,
     SUBTITLE_STATIC,
     SUBTITLE_TYPEWRITER,
     SUBTITLE_WORD_BY_WORD,
+    TEXT_NONE,
+    TEXT_SUBTITLE,
+    TEXT_TITLE_CARDS,
 )
 
 logger = logging.getLogger(__name__)
@@ -158,7 +158,6 @@ class TextEngine:
         duration = clip.duration
         words = text.split()
         sub_clips = []
-        chars_per_second = 20  # approximate typing speed
 
         for i in range(1, len(words) + 1):
             partial_text = " ".join(words[:i])

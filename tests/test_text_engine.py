@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from clipforge.text_engine import TextEngine, SubtitleRenderer
+from clipforge.text_engine import SubtitleRenderer, TextEngine
 
 
 def test_text_engine_importable():

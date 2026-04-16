@@ -9,9 +9,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from clipforge.constants import VISUAL_TYPES, VISUAL_ABSTRACT, AI_OFF
+from clipforge.constants import AI_OFF, VISUAL_ABSTRACT, VISUAL_TYPES
 from clipforge.script_parser import Scene
-
 
 # Fallback types for each visual type
 _FALLBACKS: dict[str, str] = {
@@ -360,7 +359,9 @@ class ScenePlanner:
         try:
             from clipforge.ai.prompts import SCENE_PLAN_PROMPT_V2
         except ImportError:
-            from clipforge.ai.prompts import SCENE_PLAN_PROMPT as SCENE_PLAN_PROMPT_V2  # type: ignore
+            from clipforge.ai.prompts import (
+                SCENE_PLAN_PROMPT as SCENE_PLAN_PROMPT_V2,  # type: ignore
+            )
         prompt = SCENE_PLAN_PROMPT_V2.format(
             text=text,
             keywords=", ".join(keywords),

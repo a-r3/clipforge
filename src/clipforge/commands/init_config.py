@@ -6,7 +6,6 @@ import sys
 
 import click
 
-
 # Required / commonly changed fields only. Advanced fields are optional.
 _ESSENTIAL_CONFIG = {
     "script_file": "examples/script_example.txt",
@@ -58,11 +57,12 @@ def init_config(output: str, platform: str, minimal: bool, force: bool) -> None:
       clipforge wizard
     """
     import os
+
     from clipforge.utils import save_json
 
     if os.path.exists(output) and not force:
         click.echo(f"  File already exists: {output}")
-        click.echo(f"  Use --force to overwrite, or choose a different --output path.")
+        click.echo("  Use --force to overwrite, or choose a different --output path.")
         sys.exit(1)
 
     config = dict(_ESSENTIAL_CONFIG)

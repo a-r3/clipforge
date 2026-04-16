@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# ClipForge installer for Unix/macOS
+# ClipForge v1.0 installer for Unix / macOS
 set -e
 
-echo "=== ClipForge Installer ==="
+echo "=== ClipForge v1.0 Installer ==="
 echo ""
 
 # Create virtual environment if it doesn't exist
@@ -15,22 +15,33 @@ fi
 
 source .venv/bin/activate
 
-# Install the package in editable mode with all runtime deps + TTS
-echo "[2/3] Installing clipforge and dependencies..."
+# Choose install profile
+# Default: core + TTS.  Pass --youtube to also install YouTube API libs.
+EXTRAS="tts"
+for arg in "$@"; do
+  case $arg in
+    --youtube) EXTRAS="tts,publish-youtube" ;;
+    --full)    EXTRAS="full" ;;
+  esac
+done
+
+echo "[2/3] Installing clipforge[$EXTRAS] and dependencies..."
 pip install --upgrade pip --quiet
-pip install -e ".[tts]" --quiet
+pip install -e ".[$EXTRAS]" --quiet
 
 echo "[3/3] Done!"
 echo ""
 echo "---------------------------------------------------------------------"
+echo "  ClipForge v1.0 installed with extras: [$EXTRAS]"
+echo ""
 echo "  Next steps:"
 echo ""
-echo "  1. Activate the environment:"
+echo "  1. Activate the environment (if not already):"
 echo "       source .venv/bin/activate"
 echo ""
 echo "  2. Copy and fill in your API keys:"
 echo "       cp .env.example .env"
-echo "       # Add PEXELS_API_KEY and/or PIXABAY_API_KEY"
+echo "       # Optionally set PEXELS_API_KEY, YOUTUBE_CREDENTIALS_PATH, etc."
 echo ""
 echo "  3. Verify your setup:"
 echo "       clipforge doctor"
@@ -39,8 +50,21 @@ echo "  4. Try a quick render:"
 echo "       clipforge make --script-file examples/script_example.txt \\"
 echo "                      --platform reels --audio-mode silent \\"
 echo "                      --output output/demo.mp4"
+echo ""
+echo "  5. Interactive studio:"
+echo "       clipforge studio"
 echo "---------------------------------------------------------------------"
 echo ""
 echo "  Requires: FFmpeg on PATH  (https://ffmpeg.org/download.html)"
 echo "  moviepy is pinned to 1.0.3 for rendering stability."
+echo ""
+echo "  YouTube publishing:"
+echo "    bash install.sh --youtube"
+echo "    # then set YOUTUBE_CREDENTIALS_PATH in .env"
+echo ""
+echo "  Upgrade:"
+echo "    git pull && pip install -e '.[$EXTRAS]' --upgrade"
+echo ""
+echo "  Uninstall:"
+echo "    bash uninstall.sh"
 echo "---------------------------------------------------------------------"

@@ -6,9 +6,8 @@ Adds the project's ``src`` directory to ``sys.path`` so that the
 
 from __future__ import annotations
 
-import sys
 import json
-import tempfile
+import sys
 from pathlib import Path
 
 import pytest

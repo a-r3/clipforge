@@ -7,30 +7,31 @@ from __future__ import annotations
 
 import click
 
-from clipforge.commands.make import make
-from clipforge.commands.scenes import scenes
-from clipforge.commands.doctor import doctor
-from clipforge.commands.presets import presets_cmd
-from clipforge.commands.wizard import wizard
-from clipforge.commands.init_config import init_config
-from clipforge.commands.init_batch import init_batch
+from clipforge import __version__
+from clipforge.commands.analytics import analytics_cmd
 from clipforge.commands.batch import batch
-from clipforge.commands.social_pack import social_pack
+from clipforge.commands.doctor import doctor
 from clipforge.commands.export_bundle import export_bundle
+from clipforge.commands.init_batch import init_batch
+from clipforge.commands.init_config import init_config
 from clipforge.commands.init_profile import init_profile
-from clipforge.commands.thumbnail import thumbnail
-from clipforge.commands.studio import studio
-from clipforge.commands.templates import templates_cmd
+from clipforge.commands.make import make
+from clipforge.commands.optimize import optimize_cmd
+from clipforge.commands.presets import presets_cmd
 from clipforge.commands.project import project_cmd
+from clipforge.commands.publish import publish_cmd
 from clipforge.commands.publish_manifest import publish_manifest_cmd
 from clipforge.commands.queue import queue_cmd
-from clipforge.commands.publish import publish_cmd
-from clipforge.commands.analytics import analytics_cmd
-from clipforge.commands.optimize import optimize_cmd
+from clipforge.commands.scenes import scenes
+from clipforge.commands.social_pack import social_pack
+from clipforge.commands.studio import studio
+from clipforge.commands.templates import templates_cmd
+from clipforge.commands.thumbnail import thumbnail
+from clipforge.commands.wizard import wizard
 
 
 @click.group()
-@click.version_option(package_name="clipforge")
+@click.version_option(version=__version__)
 def main() -> None:
     """ClipForge — turn text scripts into short videos for Reels, TikTok, and Shorts.
 

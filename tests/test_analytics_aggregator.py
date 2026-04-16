@@ -7,7 +7,6 @@ import pytest
 from clipforge.analytics.aggregator import AnalyticsAggregator, _bucket_key
 from clipforge.analytics.models import ContentAnalytics
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

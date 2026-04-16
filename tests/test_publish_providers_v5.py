@@ -5,10 +5,7 @@ All network/API interactions are mocked — no live API calls.
 
 from __future__ import annotations
 
-import json
-import os
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -18,11 +15,10 @@ from clipforge.providers.publish.base import (
     PublishResult,
     PublishTarget,
 )
+from clipforge.providers.publish.factory import PublishProviderFactory
 from clipforge.providers.publish.manual_provider import ManualPublishProvider
 from clipforge.providers.publish.youtube_provider import YouTubePublishProvider
-from clipforge.providers.publish.factory import PublishProviderFactory
 from clipforge.publish_config import PublishConfig
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

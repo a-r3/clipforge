@@ -215,7 +215,7 @@ class YouTubePublishProvider(PublishProvider):
         if not self.credentials_path or not Path(self.credentials_path).exists():
             raise PublishNotAvailableError(
                 "YouTube credentials not configured. "
-                f"Set the YOUTUBE_CREDENTIALS_PATH environment variable or "
+                "Set the YOUTUBE_CREDENTIALS_PATH environment variable or "
                 "pass credentials_path= to YouTubePublishProvider()."
             )
 
@@ -246,17 +246,17 @@ class YouTubePublishProvider(PublishProvider):
     def _google_libs_available() -> bool:
         """Return True if the google-api-python-client stack is importable."""
         try:
-            import googleapiclient  # noqa: F401
             import google.auth  # noqa: F401
+            import googleapiclient  # noqa: F401
             return True
         except ImportError:
             return False
 
     def _build_youtube_client(self) -> Any:
         """Authenticate and return a YouTube API service object."""
-        from googleapiclient.discovery import build
-        import google.oauth2.credentials as oauth2_creds
         import json
+
+        from googleapiclient.discovery import build
 
         creds_data = json.loads(Path(self.credentials_path).read_text(encoding="utf-8"))
         cred_type = creds_data.get("type", "")
@@ -289,8 +289,10 @@ class YouTubePublishProvider(PublishProvider):
 
     def _do_upload(self, target: PublishTarget) -> PublishResult:
         """Perform the actual YouTube upload."""
+        from datetime import datetime
+        from datetime import timezone as _tz
+
         from googleapiclient.http import MediaFileUpload
-        from datetime import datetime, timezone as _tz
 
         youtube = self._build_youtube_client()
 

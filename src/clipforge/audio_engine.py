@@ -9,12 +9,11 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
-from pathlib import Path
 from typing import Any
 
 from clipforge.constants import (
-    AUDIO_SILENT,
     AUDIO_MUSIC,
+    AUDIO_SILENT,
     AUDIO_VOICEOVER,
     AUDIO_VOICEOVER_MUSIC,
 )

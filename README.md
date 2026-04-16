@@ -1,34 +1,24 @@
-# ClipForge
+# ClipForge v1.0
 
-Turn text scripts into short videos for YouTube Shorts, Instagram Reels, and TikTok — from the command line.
+Turn text scripts into short videos for YouTube Shorts, Instagram Reels, and TikTok — with publish, analytics, and optimization built in.
 
-```
-clipforge make --script-file examples/script_example.txt --platform reels --output output/demo.mp4
+```bash
+clipforge make --script-file my_script.txt --platform reels
 ```
 
 ---
 
 ## What it does
 
-ClipForge takes a plain-text script, splits it into scenes, assembles a video with the correct aspect ratio for your target platform, overlays subtitles or title cards, and optionally adds a voiceover and background music.
+You write a script. ClipForge renders the video, generates social content, manages your publish queue, collects performance analytics, and recommends improvements for your next video — all from the command line.
 
-It works **completely without AI** as a stable default. An optional AI layer (OpenAI, Anthropic, Gemini) can improve scene planning and social pack generation when enabled.
-
----
-
-## Requirements
-
-| Dependency | Notes |
-|-----------|-------|
-| Python 3.10+ | |
-| FFmpeg | Must be on `PATH`. Install from [ffmpeg.org](https://ffmpeg.org/download.html) or via your package manager (`sudo apt install ffmpeg`) |
-| moviepy 1.0.3 | Pinned — do not upgrade; moviepy 2.x changed its API in breaking ways |
+Works **completely without AI** by default. Every feature is local-first. No hidden uploads.
 
 ---
 
-## Installation
+## Quick start
 
-### Unix / macOS
+**Step 1** — Install
 
 ```bash
 git clone <repo-url> clipforge
@@ -37,203 +27,222 @@ bash install.sh
 source .venv/bin/activate
 ```
 
-### Windows
-
-```bat
-git clone <repo-url> clipforge
-cd clipforge
-install.bat
-.venv\Scripts\activate.bat
-```
-
-### Manual
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate          # or .venv\Scripts\activate.bat on Windows
-pip install -e ".[tts]"            # includes pyttsx3 for local voiceover
-```
-
----
-
-## .env setup
-
-Copy the example and fill in your API keys:
-
-```bash
-cp .env.example .env
-```
-
-```ini
-# Stock media — optional but recommended.
-# Without these keys, ClipForge uses solid-colour fallback backgrounds and
-# prints a WARN message per missing key. Rendering still works.
-PEXELS_API_KEY=your_pexels_key_here
-PIXABAY_API_KEY=your_pixabay_key_here
-
-# AI providers — only needed when ai_mode != "off"
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
-GEMINI_API_KEY=
-```
-
-Then verify your setup:
+**Step 2** — Check your setup
 
 ```bash
 clipforge doctor
 ```
 
----
-
-## Quick start
+**Step 3** — Build your first video
 
 ```bash
-# Parse a script and preview scene breakdown
-clipforge scenes --script-file examples/script_example.txt
+# Guided interactive studio (recommended for first use)
+clipforge studio
 
-# Preview the render plan without building
-clipforge make --script-file examples/script_example.txt --dry-run
-
-# Build a video (silent audio, static subtitles)
-clipforge make --script-file examples/script_example.txt \
-               --platform reels \
-               --audio-mode silent \
-               --output output/demo.mp4
-# → prints: scenes, stock hits, fallbacks, duration, audio/text mode, output path
-
-# Build from a config file
-clipforge make --config examples/config_example.json
-
-# Generate a social media content pack (terminal + saved files)
-clipforge social-pack --script-file examples/script_example.txt \
-                      --platform reels --brand-name YourBrand \
-                      --save-json output/social.json \
-                      --save-txt  output/social.txt
-
-# Create a thumbnail (choose style: clean, bold, minimal)
-clipforge thumbnail --text "How AI changes business" \
-                    --platform reels --brand-name YourBrand \
-                    --style bold --output output/thumb.jpg
+# Or directly
+clipforge make --script-file examples/script_example.txt
 ```
+
+---
+
+## Requirements
+
+| Dependency | Notes |
+|---|---|
+| Python 3.10+ | 3.11 or 3.12 recommended |
+| FFmpeg | Must be on `PATH` — `brew install ffmpeg` or `sudo apt install ffmpeg` |
+| moviepy 1.0.3 | Pinned — 2.x breaks the render pipeline |
+
+---
+
+## Installation
+
+```bash
+# Core (video rendering + TTS voiceover)
+bash install.sh
+
+# With YouTube publishing + analytics
+bash install.sh --youtube
+
+# Everything (TTS + YouTube + AI providers)
+bash install.sh --full
+```
+
+Windows: use `install.bat` with the same flags.
+
+See `docs/install.md` for manual install, upgrade, and uninstall instructions.
+
+---
+
+## .env setup
+
+```bash
+cp .env.example .env
+```
+
+Add the keys you need — all optional:
+
+```ini
+PEXELS_API_KEY=          # Stock visuals (free tier at pexels.com)
+PIXABAY_API_KEY=         # Alternative stock visuals
+
+YOUTUBE_CREDENTIALS_PATH=  # For YouTube uploads + analytics
+CLIPFORGE_PUBLISH_DRY_RUN= # Set to 1 to default all publishes to dry-run
+```
+
+Without API keys, ClipForge uses solid-colour backgrounds and still renders correctly.
 
 ---
 
 ## All commands
 
-| Command | Description |
-|---------|-------------|
-| `clipforge make` | Build a video from a script or config file |
-| `clipforge scenes` | Parse a script and print scene breakdown |
-| `clipforge doctor` | Check FFmpeg, Python, .env, API keys |
-| `clipforge presets` | List available presets |
-| `clipforge wizard` | Interactive config builder |
-| `clipforge init-config` | Write a starter config JSON |
-| `clipforge init-batch` | Write a starter batch JSON |
-| `clipforge init-profile` | Write a starter channel profile JSON |
-| `clipforge batch` | Run multiple jobs from a batch file |
-| `clipforge social-pack` | Generate title, caption, hashtags |
-| `clipforge thumbnail` | Generate a thumbnail image (Pillow) |
-| `clipforge export-bundle` | Bundle video + thumbnail + social pack |
-| `clipforge studio` | Interactive TUI (rich) |
+### Render
+| Command | What it does |
+|---|---|
+| `make` | Render a video from a script |
+| `scenes` | Preview scene breakdown before rendering |
+| `batch` | Run multiple render jobs |
+| `export-bundle` | Bundle video + thumbnail + social pack |
+
+### Social content
+| Command | What it does |
+|---|---|
+| `social-pack` | Generate title, caption, hashtags |
+| `thumbnail` | Create a thumbnail image |
+
+### Publish
+| Command | What it does |
+|---|---|
+| `publish-manifest` | Create, show, validate publish manifests |
+| `queue` | Manage publish queue (add/list/execute/retry) |
+| `publish` | Execute publish jobs (validate/dry-run/execute/retry) |
+
+### Analytics
+| Command | What it does |
+|---|---|
+| `analytics` | Fetch, show, summarise, and compare performance metrics |
+
+### Optimization
+| Command | What it does |
+|---|---|
+| `optimize` | Data-driven recommendations for your next video |
+
+### Setup & config
+| Command | What it does |
+|---|---|
+| `doctor` | Check system requirements and configuration |
+| `wizard` | Guided interactive setup |
+| `studio` | Interactive TUI (recommended for new users) |
+| `project` | Manage reusable project folders |
+| `templates` | Content template packs |
+| `presets` | List available style presets |
+| `init-config` | Write a starter config JSON |
+| `init-profile` | Write a starter brand profile JSON |
+| `init-batch` | Write a starter batch jobs JSON |
+
+Run any command with `--help` for full options.
+
+---
+
+## Common workflows
+
+### Render and publish (YouTube)
+
+```bash
+# 1. Render
+clipforge make --script-file script.txt --platform youtube --output output/ep01.mp4
+
+# 2. Create manifest
+clipforge publish-manifest create --video-file output/ep01.mp4 --platform youtube \
+    --title "My Title" --caption "Description here" --job-name ep01
+
+# 3. Dry-run (always first)
+clipforge publish dry-run ep01.manifest.json
+
+# 4. Upload
+clipforge publish execute ep01.manifest.json
+```
+
+### Collect and act on analytics
+
+```bash
+# Fetch after publishing
+clipforge analytics fetch ep01.manifest.json
+
+# After several videos, run the optimizer
+clipforge optimize report
+
+# Save recommendations for reference
+clipforge optimize apply --output optimization_notes.json
+```
+
+### Interactive all-in-one
+
+```bash
+clipforge studio
+```
+
+Covers every workflow through guided menus: render → publish prep → analytics → optimize.
+
+---
+
+## Platform support
+
+| Platform | Render | Publish | Analytics |
+|---|---|---|---|
+| YouTube | ✓ | ✓ Real API | ✓ Real API |
+| YouTube Shorts | ✓ | ✓ Real API | ✓ Real API |
+| Instagram Reels | ✓ | Manual checklist | Manual entry |
+| TikTok | ✓ | Manual checklist | Manual entry |
+| Landscape | ✓ | Manual checklist | — |
+
+Real YouTube publishing requires `pip install -e ".[publish-youtube]"` and Google credentials. See `docs/publish.md`.
 
 ---
 
 ## Audio modes
 
 | Mode | Description |
-|------|-------------|
-| `silent` | No audio track |
-| `music` | Background music only (provide `music_file`) |
-| `voiceover` | Local TTS via pyttsx3 (`pip install ".[tts]"`) |
-| `voiceover+music` | Voiceover with music ducking |
+|---|---|
+| `silent` | No audio |
+| `music` | Background music (you provide the file) |
+| `voiceover` | Auto-generated voiceover (pyttsx3) |
+| `voiceover+music` | Voiceover + music with ducking |
 
 ---
 
-## Text / subtitle modes
+## Smart defaults by platform
 
-| `text_mode` | `subtitle_mode` | Effect |
-|------------|----------------|--------|
-| `none` | — | No text overlay |
-| `subtitle` | `static` | Full scene text, fixed position |
-| `subtitle` | `typewriter` | Characters appear one by one |
-| `subtitle` | `word-by-word` | Words appear one at a time |
-| `title_cards` | — | Large centred title card per scene |
+| Platform | Style | Subtitles |
+|---|---|---|
+| reels, tiktok | bold | word-by-word |
+| youtube-shorts | clean | static |
+| youtube, landscape | cinematic | static |
+
+---
+
+## Documentation
+
+| Guide | Contents |
+|---|---|
+| `docs/install.md` | Install, upgrade, uninstall |
+| `docs/usage.md` | Full CLI reference |
+| `docs/workflows.md` | End-to-end workflow guides |
+| `docs/publish.md` | Publish manifests, queue, providers, credentials |
+| `docs/analytics.md` | Analytics collection and interpretation |
+| `docs/optimization.md` | Optimization recommendations methodology |
+| `docs/config.md` | Config file reference |
+| `docs/ai.md` | AI provider setup |
 
 ---
 
 ## AI support (optional)
 
-Set `ai_mode` in your config:
-
-| Mode | Behaviour |
-|------|-----------|
-| `off` *(default)* | Local heuristics only — no API calls |
-| `assist` | AI improves scene queries and social pack |
-| `full` | AI drives scene planning end-to-end |
-
-Set `ai_provider` to `openai`, `anthropic`, or `gemini` and add the matching key to `.env`. If the key is missing or the provider is unavailable, ClipForge falls back silently to local mode.
-
----
-
-## Config file
-
-All CLI options can be stored in a JSON config file:
-
 ```json
-{
-  "script_file": "examples/script_example.txt",
-  "output": "output/demo.mp4",
-  "platform": "reels",
-  "style": "clean",
-  "audio_mode": "voiceover+music",
-  "text_mode": "subtitle",
-  "subtitle_mode": "word-by-word",
-  "music_file": "assets/music/background.mp3",
-  "music_volume": 0.12,
-  "auto_voice": true,
-  "voice_language": "en",
-  "intro_text": "YourBrand",
-  "outro_text": "Follow for more",
-  "brand_name": "YourBrand",
-  "ai_mode": "off"
-}
+{ "ai_mode": "assist", "ai_provider": "openai" }
 ```
 
-Generate a starter file:
-
-```bash
-clipforge init-config --output myconfig.json
-```
-
----
-
-## Local testing
-
-```bash
-# Install dev dependencies
-pip install -e ".[dev,tts]"
-
-# Run tests
-pytest tests/ -v
-
-# Smoke test the CLI
-clipforge --help
-clipforge doctor
-clipforge scenes --script-file examples/script_example.txt
-```
-
----
-
-## GitHub push
-
-```bash
-git add .
-git commit -m "feat: initial clipforge setup"
-git remote add origin https://github.com/youruser/clipforge.git
-git push -u origin main
-```
-
-The `.gitignore` already excludes `.env`, `.venv/`, `output/`, and media files.
+Modes: `off` (default, local only) | `assist` | `full`. Providers: `openai`, `anthropic`, `gemini`. See `docs/ai.md`.
 
 ---
 

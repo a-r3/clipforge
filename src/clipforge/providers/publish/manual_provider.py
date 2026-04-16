@@ -24,7 +24,6 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from clipforge.providers.publish.base import (
     PublishProvider,
@@ -200,7 +199,7 @@ class ManualPublishProvider(PublishProvider):
             "",
             "PUBLISHING",
             f"  [ ] Log in to {target.platform} account",
-            f"  [ ] Upload and configure the video",
+            "  [ ] Upload and configure the video",
             "  [ ] Confirm publish / scheduling",
             "  [ ] Record the post URL below:",
             "      Post URL: _________________________________",

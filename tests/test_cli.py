@@ -531,11 +531,11 @@ def test_cli_export_bundle_includes_config(tmp_path):
 
 
 def test_cli_version():
-    """--version should print a version string."""
+    """--version should print the package version."""
     runner = CliRunner()
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
-    assert "0.4" in result.output or "version" in result.output.lower()
+    assert "1.0.0" in result.output
 
 
 def test_cli_subcommand_modules_include_new_commands():
@@ -630,8 +630,9 @@ def test_cli_publish_manifest_show(tmp_path):
 
 def test_cli_publish_manifest_show_json(tmp_path):
     """publish-manifest show --json should output raw JSON."""
-    from clipforge.publish_manifest import PublishManifest
     import json
+
+    from clipforge.publish_manifest import PublishManifest
     m = PublishManifest(job_name="jsontest", video_path="v.mp4")
     p = tmp_path / "m.json"
     m.save(p)
@@ -1037,7 +1038,8 @@ def test_cli_analytics_fetch_manifest_not_found(tmp_path):
 
 def _make_test_manifest(tmp_path, platform="youtube"):
     """Create a minimal manifest JSON for analytics tests."""
-    import json, uuid
+    import json
+    import uuid
     m = {
         "manifest_id": str(uuid.uuid4()),
         "job_name": "test-job",
@@ -1143,9 +1145,10 @@ def test_cli_analytics_show_with_record(tmp_path):
 
 
 def test_cli_analytics_show_json(tmp_path):
+    import json
+
     from clipforge.analytics.models import ContentAnalytics
     from clipforge.analytics.storage import AnalyticsStore
-    import json
 
     mpath, manifest_id = _make_test_manifest(tmp_path)
     store_dir = tmp_path / "store"
@@ -1236,9 +1239,10 @@ def test_cli_analytics_compare_by_platform(tmp_path):
 
 
 def test_cli_analytics_compare_json(tmp_path):
+    import json
+
     from clipforge.analytics.models import ContentAnalytics
     from clipforge.analytics.storage import AnalyticsStore
-    import json
 
     store_dir = tmp_path / "store"
     store = AnalyticsStore(store_dir)

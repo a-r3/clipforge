@@ -1,0 +1,17 @@
+{
+  "name": "motivation",
+  "label": "Motivation & Mindset",
+  "description": "Inspirational and motivational content. Cinematic style, word-by-word for impact.",
+  "platform": "reels",
+  "style": "cinematic",
+  "audio_mode": "voiceover+music",
+  "text_mode": "subtitle",
+  "subtitle_mode": "word-by-word",
+  "music_volume": 0.12,
+  "max_scenes": 6,
+  "intro_text": "",
+  "outro_text": "Start today. Not tomorrow.",
+  "sample_script": "Every great achievement started with a single decision.\n\nThe gap between who you are and who you want to be is what you do every day.\n\nStop waiting for the perfect moment. It does not exist.",
+  "suggested_hashtags": ["#motivation", "#mindset", "#success", "#selfimprovement", "#growthmindset"],
+  "visual_hints": ["sunrise landscape", "person running", "city skyline dawn", "mountain peak"]
+}

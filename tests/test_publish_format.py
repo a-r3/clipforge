@@ -5,14 +5,12 @@ from __future__ import annotations
 import pytest
 
 from clipforge.publish_format import (
-    PLATFORM_RULES,
     PlatformRules,
     format_for_platform,
     get_rules,
     validate_for_platform,
 )
 from clipforge.publish_manifest import PublishManifest
-
 
 # ── get_rules ─────────────────────────────────────────────────────────────────
 

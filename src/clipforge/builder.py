@@ -12,10 +12,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from clipforge.constants import DEFAULT_PLATFORM
-from clipforge.utils import ensure_dir, get_platform_spec
-from clipforge.text_engine import TextEngine
 from clipforge.audio_engine import AudioEngine
+from clipforge.constants import DEFAULT_PLATFORM
+from clipforge.text_engine import TextEngine
+from clipforge.utils import ensure_dir, get_platform_spec
 
 logger = logging.getLogger(__name__)
 
@@ -310,9 +310,9 @@ def make_video(
 
     Returns a BuildSummary with render statistics.
     """
-    from clipforge.script_parser import ScriptParser
-    from clipforge.scene_planner import ScenePlanner
     from clipforge.config_loader import load_config
+    from clipforge.scene_planner import ScenePlanner
+    from clipforge.script_parser import ScriptParser
 
     config = load_config()
     config["output"] = out_name

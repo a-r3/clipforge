@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from clipforge.social_pack import SocialPackGenerator, generate_social_pack
 
-
 SAMPLE_SCRIPT = (
     "Artificial intelligence is transforming how businesses operate today.\n\n"
     "Companies that adopt AI technology gain significant competitive advantages."
@@ -132,7 +131,7 @@ def test_hashtags_all_start_with_hash():
 
 def test_save_json(tmp_path):
     """generate_social_pack result can be saved as JSON via save_json."""
-    from clipforge.utils import save_json, load_json
+    from clipforge.utils import load_json, save_json
     result = generate_social_pack(SAMPLE_SCRIPT, platform="reels", brand_name="Brand")
     out = tmp_path / "pack.json"
     save_json(result, out)

@@ -1,21 +1,39 @@
-# Core runtime dependencies
-# Install with: pip install -e ".[dev]"
-# For TTS support: pip install -e ".[dev,tts]"
+# ClipForge v1.0 — dependency reference
+#
+# Preferred install: pip install -e ".[dev]"
+#   + TTS:               pip install -e ".[dev,tts]"
+#   + YouTube publish:   pip install -e ".[dev,tts,publish-youtube]"
+#   + Everything:        pip install -e ".[full]"
+#
+# This file lists all dependencies for reference / pip-compile use.
+# pyproject.toml is authoritative for packaging.
 
+# ── Core runtime ─────────────────────────────────────────────
 click>=8.0
 python-dotenv>=1.0
 requests>=2.28
 rich>=13.0
 Pillow>=9.0
 
-# Video rendering — pin to 1.0.3 (stable, tested, FFmpeg-compatible).
+# Video rendering — pin to 1.0.3 (stable, FFmpeg-compatible).
 # moviepy 2.x changed its API in breaking ways; do not upgrade without
 # testing the full render pipeline.
 moviepy==1.0.3
 
-# Optional but recommended
-pyttsx3>=2.90
+# ── Optional: TTS (pip install -e ".[tts]") ──────────────────
+# pyttsx3>=2.90
 
-# Development / testing
+# ── Optional: YouTube publishing (pip install -e ".[publish-youtube]") ──
+# google-api-python-client>=2.100.0
+# google-auth-httplib2>=0.2.0
+# google-auth-oauthlib>=1.1.0
+
+# ── Optional: AI providers (pip install -e ".[ai]") ──────────
+# openai>=1.0.0
+# anthropic>=0.20.0
+# google-generativeai>=0.4.0
+
+# ── Development / testing ────────────────────────────────────
 pytest>=7.0
 pytest-mock>=3.10
+ruff>=0.4.0

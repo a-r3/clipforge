@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from clipforge.audio_engine import AudioEngine
 
@@ -41,7 +41,7 @@ def test_voiceover_mode_falls_back_without_pyttsx3():
     with patch.dict("sys.modules", {"pyttsx3": None}):
         # Should not raise; pyttsx3 import will fail and engine falls back
         try:
-            result = engine.build_audio(scenes, {"audio_mode": "voiceover", "auto_voice": True, "voice_language": "en"})
+            engine.build_audio(scenes, {"audio_mode": "voiceover", "auto_voice": True, "voice_language": "en"})
         except Exception:
             pass  # Acceptable — what matters is no unhandled crash in normal flow
 

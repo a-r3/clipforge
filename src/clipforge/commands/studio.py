@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import click
@@ -20,6 +19,7 @@ def _read_manifest_id(path: str) -> str:
 def _invoke(args: list[str]) -> int:
     """Invoke a clipforge sub-command in-process and return exit code."""
     from click.testing import CliRunner
+
     from clipforge.cli import main
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(main, args, catch_exceptions=False)
@@ -39,8 +39,8 @@ def studio() -> None:
     try:
         from rich.console import Console
         from rich.panel import Panel
+        from rich.prompt import Confirm, Prompt
         from rich.table import Table
-        from rich.prompt import Prompt, Confirm
 
         console = Console()
         _studio_rich(console, Panel, Table, Prompt, Confirm)

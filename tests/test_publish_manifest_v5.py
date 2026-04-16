@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-
-from clipforge.publish_manifest import PublishManifest
 from clipforge.providers.publish.base import PublishResult, PublishTarget
+from clipforge.publish_manifest import PublishManifest
 
 
 def test_publish_attempts_default_empty():

@@ -9,7 +9,6 @@ import pytest
 from clipforge.analytics.collector import MockAnalyticsCollector
 from clipforge.analytics.models import ContentAnalytics
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 

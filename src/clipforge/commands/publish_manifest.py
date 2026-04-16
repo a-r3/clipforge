@@ -114,6 +114,7 @@ def create_manifest(
 ) -> None:
     """Create a new publish manifest JSON file."""
     import json as _json
+
     from clipforge.publish_manifest import PublishManifest
 
     # Import social metadata from a social pack JSON if provided
@@ -192,6 +193,7 @@ def create_manifest(
 def show_manifest(manifest_file: str, as_json: bool) -> None:
     """Display the contents of a publish manifest."""
     import json as _json
+
     from clipforge.publish_manifest import PublishManifest
 
     try:
@@ -258,8 +260,8 @@ def show_manifest(manifest_file: str, as_json: bool) -> None:
               help="Override platform for validation (defaults to manifest's platform).")
 def validate_manifest(manifest_file: str, platform: str) -> None:
     """Validate a manifest file against schema and platform rules."""
-    from clipforge.publish_manifest import PublishManifest
     from clipforge.publish_format import validate_for_platform
+    from clipforge.publish_manifest import PublishManifest
 
     try:
         m = PublishManifest.load(manifest_file)

@@ -34,11 +34,12 @@ def init_profile(output: str, brand_name: str, platform: str, style: str | None,
       clipforge init-profile --output mybrand.json --brand-name MyBrand --style bold
     """
     import os
+
     from clipforge.profile import BrandProfile
 
     if os.path.exists(output) and not force:
         click.echo(f"  File already exists: {output}")
-        click.echo(f"  Use --force to overwrite, or choose a different --output path.")
+        click.echo("  Use --force to overwrite, or choose a different --output path.")
         sys.exit(1)
 
     # Auto-pick style from platform if not given

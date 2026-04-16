@@ -106,6 +106,7 @@ def templates_apply(name: str, output: str, script_file: str | None, brand_name:
       clipforge templates apply business --output business.json --brand-name MyBrand
     """
     import os
+
     from clipforge.templates import TemplateManager
     from clipforge.utils import save_json
 

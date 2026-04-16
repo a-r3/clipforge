@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
-import pytest
-
-from clipforge.config_loader import ConfigLoader, load_config, _apply_smart_defaults
+from clipforge.config_loader import ConfigLoader, _apply_smart_defaults, load_config
 
 
 class TestConfigLoader:

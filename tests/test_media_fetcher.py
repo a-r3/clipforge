@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from clipforge.media_fetcher import MediaFetcher
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -91,8 +87,6 @@ def test_fetch_returns_fallback_when_no_keys(tmp_path):
 def test_pexels_video_hit(tmp_path):
     fetcher = _make_fetcher(pexels="FAKEKEY", tmp_path=tmp_path)
     scene = {"query": "technology", "visual_type": "technology"}
-
-    fake_content = b"fakevideo"
 
     with patch.object(fetcher, "_get_json", return_value=_pexels_video_response()) as mock_get, \
          patch.object(fetcher, "_download", return_value=str(tmp_path / "pexels_v_42.mp4")) as mock_dl:

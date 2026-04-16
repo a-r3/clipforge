@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import click
 
-
 _PLATFORM_LABELS = {
     "reels": "Instagram Reels (9:16 vertical)",
     "tiktok": "TikTok (9:16 vertical)",
@@ -34,7 +33,6 @@ def wizard(output: str, quick: bool) -> None:
 
     Use --quick to answer only the essentials and skip optional settings.
     """
-    from clipforge.utils import save_json
 
     click.echo()
     click.echo("  ClipForge Setup Wizard")

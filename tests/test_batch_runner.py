@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from clipforge.batch_runner import BatchRunner
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -100,15 +97,13 @@ def test_continue_on_error_processes_all_jobs(tmp_path):
     runner = BatchRunner(on_error="continue")
 
     # Mock _run_job so only the bad script raises
-    original_run = runner._run_job
-
     def selective_run(job, idx):
         if "bad_script" in job.get("script_file", ""):
             raise FileNotFoundError("Script file not found")
         # For good jobs, mock the builder
         from clipforge.builder import BuildSummary
-        mock_summary = BuildSummary(scene_count=2, stock_hits=0, fallbacks=2,
-                                    total_duration=10.0, output_path=job["output"])
+        BuildSummary(scene_count=2, stock_hits=0, fallbacks=2,
+                     total_duration=10.0, output_path=job["output"])
         # We need to create the output file to simulate success
         Path(job["output"]).touch()
         return {"scenes": 2, "output": job["output"]}

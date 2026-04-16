@@ -34,7 +34,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 _PROJECT_FILE = "project.json"
 _PROJECT_SUBDIRS = ["scripts", "output", "assets/music", "assets/logo", "assets/downloads"]
 

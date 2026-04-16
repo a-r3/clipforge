@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -15,7 +14,7 @@ def test_project_importable():
 
 
 def test_project_init_creates_folder(tmp_path):
-    project = ClipForgeProject.init(tmp_path / "myproject", name="MyProject")
+    ClipForgeProject.init(tmp_path / "myproject", name="MyProject")
     assert (tmp_path / "myproject").is_dir()
 
 

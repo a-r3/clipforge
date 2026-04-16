@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from clipforge.utils import load_json, ensure_dir
+from clipforge.utils import load_json
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,6 @@ class BatchRunner:
 
         for i, job in enumerate(jobs, 1):
             job_output = job.get("output", f"batch_job_{i}.mp4")
-            job_script = job.get("script_file", job.get("script_text", "")[:40] or "(inline)")
             label = f"[{i}/{total}] {Path(job_output).name}"
             print(f"  {label:<35s}", end="", flush=True)
 
@@ -109,10 +108,10 @@ class BatchRunner:
 
         Raises an exception on failure.
         """
-        from clipforge.config_loader import load_config
-        from clipforge.script_parser import ScriptParser
-        from clipforge.scene_planner import ScenePlanner
         from clipforge.builder import VideoBuilder
+        from clipforge.config_loader import load_config
+        from clipforge.scene_planner import ScenePlanner
+        from clipforge.script_parser import ScriptParser
 
         config_file = job.get("config_file")
         config = load_config(config_file, overrides=job)

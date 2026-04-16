@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import click
 
-
 _PRESET_DESCRIPTIONS = {
     "clean": "Light background music, static subtitles, clean fonts. Good all-rounder.",
     "bold": "Title cards, prominent text, music. Best for Reels / TikTok hooks.",
@@ -62,6 +61,6 @@ def presets_cmd(preset: str | None) -> None:
             click.echo(f"  {name}")
         click.echo()
 
-    click.echo(f"  Apply: clipforge make --preset <name>")
-    click.echo(f"  Info:  clipforge presets --preset <name>")
+    click.echo("  Apply: clipforge make --preset <name>")
+    click.echo("  Info:  clipforge presets --preset <name>")
     click.echo()

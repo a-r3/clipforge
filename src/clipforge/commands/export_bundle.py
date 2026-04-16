@@ -71,7 +71,8 @@ def export_bundle(
           --output-dir bundle/episode-1
     """
     import os
-    from clipforge.utils import ensure_dir, save_json
+
+    from clipforge.utils import save_json
 
     if not os.path.exists(video_file):
         click.echo(f"  Error: Video file not found: {video_file}", err=True)
@@ -120,18 +121,18 @@ def export_bundle(
     # ── Script ────────────────────────────────────────────────────────
     if script_file and os.path.exists(script_file):
         _add(script_file, "script", dest_name="script.txt")
-        click.echo(f"  [script]    script.txt")
+        click.echo("  [script]    script.txt")
 
     # ── Social pack ───────────────────────────────────────────────────
     if social_json and os.path.exists(social_json):
         _add(social_json, "social_json", dest_name="social_pack.json")
-        click.echo(f"  [social]    social_pack.json  (copied)")
+        click.echo("  [social]    social_pack.json  (copied)")
         # Also write TXT alongside it
         import json as _json
         pack = _json.loads(Path(social_json).read_text(encoding="utf-8"))
         _write_social_txt(pack, out_path / "social_pack.txt")
         bundle_files.append({"label": "social_txt", "file": "social_pack.txt"})
-        click.echo(f"  [social]    social_pack.txt   (generated)")
+        click.echo("  [social]    social_pack.txt   (generated)")
     else:
         # Auto-generate from video filename stem
         click.echo("  [social]    (auto-generating from video name...)")
@@ -144,28 +145,28 @@ def export_bundle(
         _write_social_txt(pack, st)
         for label, fn in [("social_json", sj.name), ("social_txt", st.name)]:
             bundle_files.append({"label": label, "file": fn})
-        click.echo(f"  [social]    social_pack.json + social_pack.txt")
+        click.echo("  [social]    social_pack.json + social_pack.txt")
 
     # ── Render summary ────────────────────────────────────────────────
     if render_summary and os.path.exists(render_summary):
         _add(render_summary, "render_summary", dest_name="render_summary.json")
-        click.echo(f"  [summary]   render_summary.json")
+        click.echo("  [summary]   render_summary.json")
 
     # ── Config snapshot ───────────────────────────────────────────────
     if config_file and os.path.exists(config_file):
         _add(config_file, "config_snapshot", dest_name="config_snapshot.json")
-        click.echo(f"  [config]    config_snapshot.json")
+        click.echo("  [config]    config_snapshot.json")
 
     # ── Profile snapshot ──────────────────────────────────────────────
     if profile_file and os.path.exists(profile_file):
         _add(profile_file, "profile_snapshot", dest_name="profile_snapshot.json")
-        click.echo(f"  [profile]   profile_snapshot.json")
+        click.echo("  [profile]   profile_snapshot.json")
 
     # ── Publish manifest ──────────────────────────────────────────────
     if publish_manifest_file and os.path.exists(publish_manifest_file):
         _add(publish_manifest_file, "publish_manifest",
              dest_name="publish_manifest.json")
-        click.echo(f"  [manifest]  publish_manifest.json  (copied)")
+        click.echo("  [manifest]  publish_manifest.json  (copied)")
     else:
         # Auto-generate a minimal publish manifest from what we know
         from clipforge.publish_manifest import PublishManifest
@@ -205,7 +206,7 @@ def export_bundle(
         _pm_path = out_path / "publish_manifest.json"
         pm.save(_pm_path)
         bundle_files.append({"label": "publish_manifest", "file": _pm_path.name})
-        click.echo(f"  [manifest]  publish_manifest.json  (generated)")
+        click.echo("  [manifest]  publish_manifest.json  (generated)")
 
     # ── Bundle manifest ────────────────────────────────────────────────
     manifest["files"] = bundle_files

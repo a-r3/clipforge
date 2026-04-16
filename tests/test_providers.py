@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Stock provider
 # ---------------------------------------------------------------------------
@@ -157,7 +156,7 @@ def test_publish_provider_concrete_subclass_works():
 
 
 def test_publish_provider_no_key_not_available():
-    from clipforge.providers.publish import PublishProvider, PublishResult, PublishTarget
+    from clipforge.providers.publish import PublishProvider, PublishResult
 
     class DummyPublisher(PublishProvider):
         def publish(self, target):

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from clipforge.ai.base import AIProvider
 
@@ -72,6 +71,7 @@ class AIFactory:
         Returns None if ai_mode is 'off' or provider is unavailable.
         """
         import os
+
         from clipforge.constants import AI_OFF
 
         ai_mode = config.get("ai_mode", AI_OFF)

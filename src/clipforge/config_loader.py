@@ -6,24 +6,21 @@ and returns a complete config dict with sensible defaults.
 
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 from typing import Any
 
 from clipforge.constants import (
+    DEFAULT_AI_MODE,
+    DEFAULT_AUDIO_MODE,
+    DEFAULT_MAX_SCENES,
+    DEFAULT_MUSIC_VOLUME,
     DEFAULT_PLATFORM,
     DEFAULT_STYLE,
-    DEFAULT_AUDIO_MODE,
-    DEFAULT_TEXT_MODE,
     DEFAULT_SUBTITLE_MODE,
-    DEFAULT_AI_MODE,
-    DEFAULT_MUSIC_VOLUME,
-    DEFAULT_MAX_SCENES,
-    VERTICAL_PLATFORMS,
+    DEFAULT_TEXT_MODE,
 )
-from clipforge.utils import merge_dicts, load_json
-
+from clipforge.utils import load_json, merge_dicts
 
 # Default configuration values — baseline before smart-defaults are applied
 _DEFAULTS: dict[str, Any] = {
@@ -145,7 +142,7 @@ class ConfigLoader:
         """
         errors: list[str] = []
 
-        from clipforge.constants import ALL_PLATFORMS, AUDIO_MODES, TEXT_MODES, SUBTITLE_MODES
+        from clipforge.constants import ALL_PLATFORMS, AUDIO_MODES, SUBTITLE_MODES, TEXT_MODES
 
         # Platform
         platform = config.get("platform", "")
@@ -180,7 +177,6 @@ class ConfigLoader:
             )
 
         # File paths — only validate if non-empty (existence check)
-        import os
         for key in ("script_file", "music_file", "logo_file"):
             val = config.get(key, "")
             if val and not os.path.exists(val):

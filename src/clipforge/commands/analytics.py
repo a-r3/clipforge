@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
 
 import click
 
@@ -300,10 +299,10 @@ def analytics_compare(
 # ── Private helpers ───────────────────────────────────────────────────────────
 
 
-def _manual_entry(manifest) -> "ContentAnalytics":  # type: ignore[return]
+def _manual_entry(manifest):
     """Prompt the user to enter metrics by hand. Returns a ContentAnalytics record."""
+
     from clipforge.analytics.models import ContentAnalytics
-    from datetime import datetime, timezone
 
     click.echo(f"\nManual analytics entry for: {manifest.job_name or manifest.manifest_id}")
     click.echo("Press Enter to skip a metric (leaves it at 0).\n")

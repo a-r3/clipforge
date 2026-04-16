@@ -102,15 +102,16 @@ class YouTubeAnalyticsCollector(BaseAnalyticsCollector):
     @staticmethod
     def _google_libs_available() -> bool:
         try:
-            import googleapiclient  # noqa: F401
             import google.auth  # noqa: F401
+            import googleapiclient  # noqa: F401
             return True
         except ImportError:
             return False
 
     def _build_analytics_client(self) -> Any:
-        from googleapiclient.discovery import build
         import json
+
+        from googleapiclient.discovery import build
 
         creds_data = json.loads(Path(self.credentials_path).read_text(encoding="utf-8"))
 
@@ -150,7 +151,7 @@ class YouTubeAnalyticsCollector(BaseAnalyticsCollector):
         response = (
             yt_analytics.reports()
             .query(
-                ids=f"channel==MINE",
+                ids="channel==MINE",
                 startDate=start_date,
                 endDate=end_date,
                 metrics="views,likes,dislikes,comments,shares,estimatedMinutesWatched,"

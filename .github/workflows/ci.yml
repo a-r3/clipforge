@@ -26,8 +26,60 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
+      - name: Lint (ruff)
+        run: |
+          ruff check src/ tests/ --select E,F,W --ignore E501 || true
+
       - name: Run tests
         run: pytest tests/ -v --tb=short
 
       - name: Verify CLI entry point
-        run: clipforge --help
+        run: |
+          clipforge --help
+          clipforge --version
+          clipforge doctor
+
+      - name: Verify core modules importable (V1–V3)
+        run: |
+          python -c "from clipforge.cli import main; print('CLI OK')"
+          python -c "from clipforge.builder import VideoBuilder, BuildSummary; print('Builder OK')"
+          python -c "from clipforge.scene_planner import ScenePlanner; print('Planner OK')"
+          python -c "from clipforge.profile import BrandProfile; print('Profile OK')"
+          python -c "from clipforge.project import ClipForgeProject; print('Project OK')"
+
+      - name: Verify publish layer importable (V4–V5)
+        run: |
+          python -c "from clipforge.publish_manifest import PublishManifest; print('PublishManifest OK')"
+          python -c "from clipforge.publish_queue import PublishQueue; print('PublishQueue OK')"
+          python -c "from clipforge.publish_format import validate_for_platform; print('PublishFormat OK')"
+          python -c "from clipforge.publish_config import PublishConfig; print('PublishConfig OK')"
+          python -c "from clipforge.providers.publish.manual_provider import ManualPublishProvider; print('ManualProvider OK')"
+          python -c "from clipforge.providers.publish.youtube_provider import YouTubePublishProvider; print('YouTubeProvider OK')"
+          python -c "from clipforge.providers.publish.factory import PublishProviderFactory; print('PublishFactory OK')"
+
+      - name: Verify analytics layer importable (V6)
+        run: |
+          python -c "from clipforge.analytics.models import ContentAnalytics; print('ContentAnalytics OK')"
+          python -c "from clipforge.analytics.storage import AnalyticsStore; print('AnalyticsStore OK')"
+          python -c "from clipforge.analytics.collector import MockAnalyticsCollector; print('MockCollector OK')"
+          python -c "from clipforge.analytics.aggregator import AnalyticsAggregator; print('Aggregator OK')"
+          python -c "from clipforge.analytics.factory import AnalyticsCollectorFactory; print('AnalyticsFactory OK')"
+          python -c "from clipforge.analytics.providers.youtube import YouTubeAnalyticsCollector; print('YouTubeAnalytics OK')"
+          python -c "from clipforge.analytics.providers.tiktok import TikTokAnalyticsCollector; print('TikTokAnalytics OK')"
+          python -c "from clipforge.analytics.providers.reels import ReelsAnalyticsCollector; print('ReelsAnalytics OK')"
+
+      - name: Verify optimization layer importable (V7)
+        run: |
+          python -c "from clipforge.optimize.models import OptimizationReport, Recommendation; print('Optimize models OK')"
+          python -c "from clipforge.optimize.engine import Optimizer; print('Optimizer OK')"
+          python -c "from clipforge.optimize import Optimizer, OptimizationReport, Recommendation; print('Optimize package OK')"
+
+      - name: Verify all CLI commands registered
+        run: |
+          clipforge make --help
+          clipforge studio --help
+          clipforge publish-manifest --help
+          clipforge queue --help
+          clipforge publish --help
+          clipforge analytics --help
+          clipforge optimize --help

@@ -6,7 +6,6 @@ import sys
 
 import click
 
-
 _BATCH_TEMPLATE = {
     "jobs": [
         {
@@ -35,6 +34,7 @@ _BATCH_TEMPLATE = {
 def init_batch(output: str, force: bool) -> None:
     """Create a starter batch jobs JSON file."""
     import os
+
     from clipforge.utils import save_json
 
     if os.path.exists(output) and not force:

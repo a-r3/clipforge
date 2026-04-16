@@ -1,0 +1,17 @@
+{
+  "name": "business",
+  "label": "Business Content",
+  "description": "Professional business and entrepreneurship content. Bold style, word-by-word subtitles.",
+  "platform": "reels",
+  "style": "bold",
+  "audio_mode": "music",
+  "text_mode": "subtitle",
+  "subtitle_mode": "word-by-word",
+  "music_volume": 0.10,
+  "max_scenes": 10,
+  "intro_text": "",
+  "outro_text": "Follow for business insights",
+  "sample_script": "Your business idea has the power to change everything.\n\nMost entrepreneurs fail because they skip this one crucial step.\n\nBuild systems, not just products. Scale what works.",
+  "suggested_hashtags": ["#business", "#entrepreneur", "#startup", "#success", "#marketing"],
+  "visual_hints": ["business meeting", "professional workspace", "urban skyline", "team collaboration"]
+}

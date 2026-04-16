@@ -243,10 +243,10 @@ def queue_execute(
       - Manual provider items → status: manual_action_required
       - Failures → status: failed
     """
-    from clipforge.publish_queue import PublishQueue
-    from clipforge.publish_config import PublishConfig
-    from clipforge.providers.publish.factory import PublishProviderFactory
     from clipforge.providers.publish.base import PublishNotAvailableError
+    from clipforge.providers.publish.factory import PublishProviderFactory
+    from clipforge.publish_config import PublishConfig
+    from clipforge.publish_queue import PublishQueue
 
     try:
         q = PublishQueue.load(queue_dir)
@@ -383,6 +383,7 @@ def queue_retry_failed(queue_dir: str, config_file: str, yes: bool) -> None:
 
     # Delegate to queue execute with pending filter
     from click.testing import CliRunner
+
     from clipforge.cli import main
     args = ["queue", "execute", queue_dir, "--status-filter", "pending"]
     if config_file:

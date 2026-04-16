@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from clipforge.builder import VideoBuilder, make_video
 from clipforge.utils import get_platform_spec

@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
-
 from clipforge.script_parser import (
-    ScriptParser,
     Scene,
-    split_script_into_scenes,
+    ScriptParser,
     _detect_visual_intent,
+    split_script_into_scenes,
 )
 
 

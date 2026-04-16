@@ -4,18 +4,33 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clipforge"
-version = "0.1.0"
-description = "CLI tool to turn text scripts into short videos for YouTube Shorts, Reels, and TikTok."
+version = "1.0.0"
+description = "CLI tool to turn text scripts into short videos for YouTube Shorts, Reels, and TikTok — with publish, analytics, and optimization built in."
 authors = [{name = "ClipForge", email = "hello@clipforge.dev"}]
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
-keywords = ["video", "cli", "shorts", "reels", "tiktok", "ffmpeg"]
+keywords = ["video", "cli", "shorts", "reels", "tiktok", "ffmpeg", "content-creation"]
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Utilities",
 ]
+
+[project.urls]
+Homepage = "https://github.com/clipforge/clipforge"
+Documentation = "https://github.com/clipforge/clipforge#readme"
+"Bug Tracker" = "https://github.com/clipforge/clipforge/issues"
+Changelog = "https://github.com/clipforge/clipforge/blob/main/docs/changelog.md"
 dependencies = [
     "click>=8.0",
     "python-dotenv>=1.0",
@@ -37,11 +52,35 @@ ai = [
     "anthropic>=0.20.0",
     "google-generativeai>=0.4.0",
 ]
+publish-youtube = [
+    "google-api-python-client>=2.100.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.1.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-mock>=3.10",
     "pyttsx3>=2.90",
+    "ruff>=0.4.0",
 ]
+# Install everything at once: pip install -e ".[full]"
+full = [
+    "pyttsx3>=2.90",
+    "openai>=1.0.0",
+    "anthropic>=0.20.0",
+    "google-generativeai>=0.4.0",
+    "google-api-python-client>=2.100.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.1.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
 
 [project.scripts]
 clipforge = "clipforge.cli:main"
@@ -51,6 +90,9 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 clipforge = ["py.typed"]
+
+[tool.setuptools.data-files]
+"data" = ["data/presets.json", "data/platforms.json", "data/styles.json", "data/voices.json"]
 
 [tool.black]
 line-length = 100

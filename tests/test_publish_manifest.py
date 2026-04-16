@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
+import time
 
 import pytest
 
-from clipforge.publish_manifest import PublishManifest, VALID_PLATFORMS, VALID_STATUSES
-
+from clipforge.publish_manifest import VALID_PLATFORMS, VALID_STATUSES, PublishManifest
 
 # ── Basic instantiation ───────────────────────────────────────────────────────
 
@@ -152,7 +150,7 @@ def test_save_creates_parent_dirs(tmp_path):
 def test_save_updates_updated_at(tmp_path):
     m = PublishManifest(video_path="v.mp4")
     original_updated = m.updated_at
-    import time; time.sleep(0.01)
+    time.sleep(0.01)
     m.save(tmp_path / "m.json")
     assert m.updated_at >= original_updated
 

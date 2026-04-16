@@ -25,8 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from clipforge.publish_manifest import PublishManifest, VALID_STATUSES
-
+from clipforge.publish_manifest import VALID_STATUSES, PublishManifest
 
 _QUEUE_FILE = "queue.json"
 _MANIFESTS_DIR = "manifests"

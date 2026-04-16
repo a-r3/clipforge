@@ -1,0 +1,17 @@
+{
+  "name": "ai_content",
+  "label": "AI & Tech Content",
+  "description": "Artificial intelligence and technology explainers. Clean style, bold visuals.",
+  "platform": "reels",
+  "style": "bold",
+  "audio_mode": "voiceover",
+  "text_mode": "subtitle",
+  "subtitle_mode": "word-by-word",
+  "music_volume": 0.08,
+  "max_scenes": 8,
+  "intro_text": "",
+  "outro_text": "Follow for AI insights",
+  "sample_script": "Artificial intelligence is changing every industry right now.\n\nMachine learning models can now outperform humans at specific tasks.\n\nHere is what that means for your career and business.",
+  "suggested_hashtags": ["#AI", "#artificialintelligence", "#technology", "#machinelearning", "#futureofwork"],
+  "visual_hints": ["artificial intelligence", "data visualization", "technology abstract", "neural network"]
+}

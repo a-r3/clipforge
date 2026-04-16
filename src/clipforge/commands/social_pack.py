@@ -107,7 +107,8 @@ def social_pack(
 
     # ── Save files ───────────────────────────────────────────────────────
     if save_json:
-        from clipforge.utils import save_json as _save_json, ensure_dir
+        from clipforge.utils import ensure_dir
+        from clipforge.utils import save_json as _save_json
         ensure_dir(Path(save_json).parent)
         _save_json(pack, save_json)
         click.echo(f"\n  JSON saved  : {save_json}")

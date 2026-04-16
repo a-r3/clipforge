@@ -7,7 +7,6 @@ import pytest
 from clipforge.publish_manifest import PublishManifest
 from clipforge.publish_queue import PublishQueue
 
-
 # ── Init / load ───────────────────────────────────────────────────────────────
 
 
@@ -16,17 +15,17 @@ def test_importable():
 
 
 def test_init_creates_dir(tmp_path):
-    q = PublishQueue.init(tmp_path / "q")
+    PublishQueue.init(tmp_path / "q")
     assert (tmp_path / "q").is_dir()
 
 
 def test_init_creates_queue_json(tmp_path):
-    q = PublishQueue.init(tmp_path / "q")
+    PublishQueue.init(tmp_path / "q")
     assert (tmp_path / "q" / "queue.json").exists()
 
 
 def test_init_creates_manifests_subdir(tmp_path):
-    q = PublishQueue.init(tmp_path / "q")
+    PublishQueue.init(tmp_path / "q")
     assert (tmp_path / "q" / "manifests").is_dir()
 
 

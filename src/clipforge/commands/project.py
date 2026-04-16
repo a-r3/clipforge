@@ -156,6 +156,7 @@ def project_build(
     """
     import os
     from pathlib import Path as P
+
     from clipforge.project import ClipForgeProject
 
     try:
@@ -208,10 +209,10 @@ def project_build(
     config = project.build_config(overrides=overrides)
 
     # Hand off to the make pipeline
-    from clipforge.script_parser import ScriptParser
-    from clipforge.scene_planner import ScenePlanner
     from clipforge.ai.factory import AIFactory
     from clipforge.commands.make import _echo_selected_settings, _print_dry_run
+    from clipforge.scene_planner import ScenePlanner
+    from clipforge.script_parser import ScriptParser
 
     click.echo()
     click.echo(f"  Project : {project.name}")
