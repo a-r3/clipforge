@@ -8,6 +8,8 @@ import sys
 
 import click
 
+from clipforge.utils import load_env_file
+
 
 def _ok(msg: str) -> None:
     click.echo(f"  [OK]    {msg}")
@@ -39,6 +41,7 @@ def doctor(config_file: str | None) -> None:
     click.echo("\n  ClipForge Doctor")
     click.echo("  " + "─" * 38)
     all_ok = True
+    load_env_file()
 
     click.echo()
     # 1. Python version

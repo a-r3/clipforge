@@ -14,7 +14,7 @@ from typing import Any
 
 import requests
 
-from clipforge.utils import ensure_dir
+from clipforge.utils import ensure_dir, load_env_file
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +42,12 @@ class MediaFetcher:
         pixabay_key: str | None = None,
         cache_dir: str | Path = "assets/downloads",
     ) -> None:
-        self._pexels_key = pexels_key or os.environ.get("PEXELS_API_KEY", "")
-        self._pixabay_key = pixabay_key or os.environ.get("PIXABAY_API_KEY", "")
+        if pexels_key is None or pixabay_key is None:
+            load_env_file()
+        self._pexels_key = pexels_key if pexels_key is not None else os.environ.get("PEXELS_API_KEY", "")
+        self._pixabay_key = (
+            pixabay_key if pixabay_key is not None else os.environ.get("PIXABAY_API_KEY", "")
+        )
         self._cache_dir = Path(cache_dir)
         # Track used media IDs to avoid duplicates
         self._used_ids: set[str] = set()

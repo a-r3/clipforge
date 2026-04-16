@@ -10,6 +10,8 @@ import logging
 import textwrap
 from typing import Any
 
+from PIL import Image, ImageDraw, ImageFont
+
 from clipforge.constants import (
     SUBTITLE_STATIC,
     SUBTITLE_TYPEWRITER,
@@ -20,6 +22,17 @@ from clipforge.constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+_FONT_CANDIDATES = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+    "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+    "/System/Library/Fonts/Arial Bold.ttf",
+    "C:\\Windows\\Fonts\\arialbd.ttf",
+    "C:\\Windows\\Fonts\\calibrib.ttf",
+]
 
 # Style defaults
 _STYLE_DEFAULTS: dict[str, dict[str, Any]] = {
@@ -149,6 +162,7 @@ class TextEngine:
             stroke_color=style_cfg["stroke_color"],
             stroke_width=style_cfg["stroke_width"],
             width=clip.w,
+            bg_color=style_cfg.get("bg_color"),
         )
         position = style_cfg["position"]
         return self._composite_clips(clip, [txt_clip.set_position(position)])
@@ -171,6 +185,7 @@ class TextEngine:
                 stroke_color=style_cfg["stroke_color"],
                 stroke_width=style_cfg["stroke_width"],
                 width=clip.w,
+                bg_color=style_cfg.get("bg_color"),
             ).set_start(start_time)
             sub_clips.append(sub_clip.set_position(style_cfg["position"]))
 
@@ -219,6 +234,7 @@ class TextEngine:
                 stroke_color=style_cfg["stroke_color"],
                 stroke_width=style_cfg["stroke_width"],
                 width=clip.w,
+                bg_color=style_cfg.get("bg_color"),
             ).set_start(start_time)
             sub_clips.append(sub_clip.set_position(position))
 
@@ -247,6 +263,7 @@ class TextEngine:
             stroke_color=style_cfg["stroke_color"],
             stroke_width=style_cfg["stroke_width"],
             width=int(clip.w * 0.85),  # 85% width for margins
+            bg_color=style_cfg.get("bg_color"),
         ).set_position(("center", "center"))
 
         return self._composite_clips(clip, [txt_clip])
@@ -260,25 +277,66 @@ class TextEngine:
         stroke_color: str,
         stroke_width: int,
         width: int,
+        bg_color: Any | None = None,
     ) -> Any:
-        """Create a MoviePy TextClip.  Isolated here for easy mocking."""
-        from moviepy.editor import TextClip  # type: ignore[import]
+        """Create a text overlay clip using Pillow instead of ImageMagick."""
+        import numpy as np
+        from moviepy.editor import ImageClip  # type: ignore[import]
 
-        return TextClip(
-            text,
-            fontsize=font_size,
-            color=color,
-            stroke_color=stroke_color,
-            stroke_width=stroke_width,
-            method="caption",
-            size=(width, None),
-        ).set_duration(duration)
+        font = self._load_font(font_size)
+        lines = text.splitlines() or [text]
+        padding_x = max(20, font_size // 2)
+        padding_y = max(14, font_size // 3)
+        spacing = max(8, font_size // 5)
+        canvas = Image.new("RGBA", (width, max(font_size * 2, 120)), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(canvas)
+
+        line_boxes = [draw.textbbox((0, 0), line or " ", font=font, stroke_width=stroke_width) for line in lines]
+        text_width = max((box[2] - box[0]) for box in line_boxes)
+        text_height = sum((box[3] - box[1]) for box in line_boxes) + spacing * max(0, len(lines) - 1)
+        overlay_w = min(width, text_width + padding_x * 2)
+        overlay_h = text_height + padding_y * 2
+        image = Image.new("RGBA", (overlay_w, overlay_h), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(image)
+
+        if bg_color:
+            draw.rounded_rectangle(
+                [0, 0, overlay_w, overlay_h],
+                radius=max(12, font_size // 3),
+                fill=bg_color,
+            )
+
+        y = padding_y
+        for line, box in zip(lines, line_boxes, strict=False):
+            line_w = box[2] - box[0]
+            x = max(0, (overlay_w - line_w) // 2)
+            draw.text(
+                (x, y),
+                line,
+                font=font,
+                fill=color,
+                stroke_fill=stroke_color,
+                stroke_width=stroke_width,
+                spacing=spacing,
+            )
+            y += (box[3] - box[1]) + spacing
+
+        return ImageClip(np.array(image)).set_duration(duration)
 
     def _composite_clips(self, base_clip: Any, overlay_clips: list[Any]) -> Any:
         """Composite overlay clips on top of base_clip."""
         from moviepy.editor import CompositeVideoClip  # type: ignore[import]
 
         return CompositeVideoClip([base_clip] + overlay_clips)
+
+    def _load_font(self, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+        """Load an available bold system font, falling back safely when needed."""
+        for path in _FONT_CANDIDATES:
+            try:
+                return ImageFont.truetype(path, size)
+            except (OSError, IOError):
+                continue
+        return ImageFont.load_default()
 
 
 class SubtitleRenderer:

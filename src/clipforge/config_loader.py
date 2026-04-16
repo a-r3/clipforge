@@ -20,7 +20,7 @@ from clipforge.constants import (
     DEFAULT_SUBTITLE_MODE,
     DEFAULT_TEXT_MODE,
 )
-from clipforge.utils import load_json, merge_dicts
+from clipforge.utils import load_env_file, load_json, merge_dicts
 
 # Default configuration values — baseline before smart-defaults are applied
 _DEFAULTS: dict[str, Any] = {
@@ -190,4 +190,5 @@ class ConfigLoader:
 # Module-level convenience function
 def load_config(path: str | Path | None = None, overrides: dict[str, Any] | None = None) -> dict[str, Any]:
     """Load and return a config dict (module-level convenience wrapper)."""
+    load_env_file()
     return ConfigLoader().load(path, overrides)

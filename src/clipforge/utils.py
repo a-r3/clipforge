@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -94,6 +95,39 @@ def save_json(data: Any, path: str | Path, indent: int = 2) -> None:
     ensure_dir(p.parent)
     with p.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=indent, ensure_ascii=False)
+
+
+def load_env_file(path: str | Path = ".env", override: bool = False) -> dict[str, str]:
+    """Load simple KEY=VALUE pairs from a .env file into os.environ.
+
+    Supports blank lines, comments, and optional single/double quotes.
+    Returns the parsed key/value pairs regardless of whether they were
+    inserted into the current process environment.
+    """
+    parsed: dict[str, str] = {}
+    env_path = Path(path)
+    if not env_path.exists():
+        return parsed
+
+    try:
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if not key:
+                continue
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+                value = value[1:-1]
+            parsed[key] = value
+            if override or key not in os.environ:
+                os.environ[key] = value
+    except OSError:
+        return parsed
+
+    return parsed
 
 
 def get_platform_spec(platform: str) -> dict:

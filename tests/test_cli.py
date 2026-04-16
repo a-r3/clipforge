@@ -5,6 +5,7 @@ import json
 import types
 
 from click.testing import CliRunner
+from PIL import Image
 
 from clipforge.cli import main
 
@@ -130,6 +131,10 @@ def test_cli_thumbnail(tmp_path):
     assert result.exit_code == 0
     assert out.exists()
     assert out.stat().st_size > 0
+    image = Image.open(out)
+    colors = image.convert("RGB").getcolors(maxcolors=1_000_000)
+    assert colors is not None
+    assert len(colors) > 10
 
 
 def test_cli_thumbnail_style_presets(tmp_path):

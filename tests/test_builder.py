@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import patch
 
+from PIL import Image
+
 from clipforge.builder import VideoBuilder, make_video
 from clipforge.utils import get_platform_spec
 
@@ -151,5 +153,28 @@ def test_render_fallback_card_image_creates_visible_asset(tmp_path):
     try:
         assert Path(path).exists()
         assert Path(path).stat().st_size > 0
+        image = Image.open(path)
+        colors = image.convert("RGB").getcolors(maxcolors=1_000_000)
+        assert colors is not None
+        assert len(colors) > 10
     finally:
         Path(path).unlink(missing_ok=True)
+
+
+def test_fallback_scene_skips_extra_text_overlay():
+    """Fallback scene cards should not stack an extra subtitle layer on top."""
+    builder = VideoBuilder()
+    scene = {
+        "text": "Test subtitle text",
+        "duration": 2.0,
+        "visual_type": "technology",
+        "_media_source": "fallback",
+    }
+    config = {"text_mode": "subtitle", "subtitle_mode": "static", "style": "clean"}
+
+    with patch.object(builder, "_load_or_create_clip", return_value="base-clip"):
+        with patch.object(builder._text_engine, "add_text_overlay", return_value="overlay-clip") as overlay:
+            result = builder._build_scene_clip(scene, 1920, 1080, config)
+
+    assert result == "base-clip"
+    overlay.assert_not_called()

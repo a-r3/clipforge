@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,17 @@ _BG_COLORS: dict[str, tuple[int, int, int]] = {
     "nature": (46, 104, 74),
     "abstract": (72, 72, 96),
 }
+
+_FONT_CANDIDATES = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+    "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+    "/System/Library/Fonts/Helvetica.ttc",
+    "/System/Library/Fonts/Arial Bold.ttf",
+    "C:\\Windows\\Fonts\\arialbd.ttf",
+    "C:\\Windows\\Fonts\\calibrib.ttf",
+]
 
 
 @dataclass
@@ -169,8 +181,8 @@ class VideoBuilder:
         from clipforge.media_fetcher import MediaFetcher
 
         fetcher = MediaFetcher(
-            pexels_key=config.get("pexels_api_key", ""),
-            pixabay_key=config.get("pixabay_api_key", ""),
+            pexels_key=config.get("pexels_api_key"),
+            pixabay_key=config.get("pixabay_api_key"),
         )
 
         # Warn once per missing key
@@ -207,6 +219,10 @@ class VideoBuilder:
         # Try to load a video/image asset; fall back to solid colour
         clip = self._load_or_create_clip(scene, width, height, duration)
 
+        # Fallback cards already contain their own editorial text layout.
+        if scene.get("_media_source") == "fallback":
+            return clip
+
         # Add text overlay
         clip = self._text_engine.add_text_overlay(clip, scene, config)
 
@@ -238,12 +254,20 @@ class VideoBuilder:
         from moviepy.editor import VideoFileClip  # type: ignore[import]
 
         clip = VideoFileClip(path)
+        if getattr(clip, "audio", None) is not None:
+            clip = clip.without_audio()
         clip = self._resize_and_crop(clip, width, height)
-        if clip.duration > duration:
-            clip = clip.subclip(0, duration)
-        elif clip.duration < duration:
+        clip_duration = max(0.0, float(getattr(clip, "duration", 0.0) or 0.0))
+        if clip_duration > duration:
+            safe_end = max(0.05, min(duration, clip_duration - 0.05))
+            clip = clip.subclip(0, safe_end)
+            if safe_end < duration:
+                from moviepy.video.fx.all import loop  # type: ignore[import]
+
+                clip = loop(clip, duration=duration)
+        elif clip_duration < duration:
             from moviepy.video.fx.all import loop  # type: ignore[import]
-            clip = loop(clip, duration=duration)
+            clip = loop(clip, duration=duration + 0.1).subclip(0, duration)
         return clip
 
     def _create_color_clip(
@@ -266,7 +290,7 @@ class VideoBuilder:
         width: int,
         height: int,
     ) -> Any:
-        """Create a generated fallback card clip with visible scene context."""
+        """Create a generated fallback card clip with polished editorial styling."""
         from moviepy.editor import ImageClip  # type: ignore[import]
 
         image_path = self._render_fallback_card_image(scene, color, width, height)
@@ -282,37 +306,99 @@ class VideoBuilder:
         """Render a fallback still image for a scene and return its temp path."""
         image = Image.new("RGB", (width, height), color)
         draw = ImageDraw.Draw(image)
+        accent = tuple(min(255, c + 55) for c in color)
+        accent_soft = tuple(min(255, c + 30) for c in color)
+        panel_bg = (13, 16, 24)
+        border = tuple(min(255, c + 85) for c in color)
 
-        # Add some simple bands so fallback frames don't read as flat black.
-        accent = tuple(min(255, c + 45) for c in color)
-        draw.rectangle([0, 0, width, max(24, height // 14)], fill=accent)
-        draw.rectangle([0, height - max(36, height // 10), width, height], fill=(18, 18, 24))
+        for y in range(height):
+            ratio = y / max(height - 1, 1)
+            tone = (
+                int(color[0] * (1 - ratio) + 8 * ratio),
+                int(color[1] * (1 - ratio) + 12 * ratio),
+                int(color[2] * (1 - ratio) + 18 * ratio),
+            )
+            draw.line([(0, y), (width, y)], fill=tone)
+
+        draw.ellipse(
+            [
+                int(width * -0.08),
+                int(height * -0.10),
+                int(width * 0.48),
+                int(height * 0.62),
+            ],
+            fill=tuple(min(255, c + 18) for c in accent),
+        )
+        draw.ellipse(
+            [
+                int(width * 0.58),
+                int(height * 0.18),
+                int(width * 1.08),
+                int(height * 0.92),
+            ],
+            fill=tuple(max(0, c - 8) for c in accent_soft),
+        )
+        draw.rounded_rectangle(
+            [int(width * 0.05), int(height * 0.08), int(width * 0.70), int(height * 0.86)],
+            radius=max(18, width // 55),
+            fill=panel_bg,
+            outline=border,
+            width=max(2, width // 420),
+        )
+        draw.rounded_rectangle(
+            [int(width * 0.72), int(height * 0.12), int(width * 0.92), int(height * 0.24)],
+            radius=max(14, width // 70),
+            fill=accent,
+        )
+        draw.rounded_rectangle(
+            [int(width * 0.72), int(height * 0.28), int(width * 0.92), int(height * 0.70)],
+            radius=max(16, width // 70),
+            fill=(20, 24, 34),
+            outline=accent_soft,
+            width=max(2, width // 520),
+        )
 
         title = (scene.get("primary_query") or scene.get("query") or "ClipForge fallback").strip()
         visual_type = (scene.get("visual_type") or "abstract").strip().upper()
         body = (scene.get("text") or "").strip()
-        if len(body) > 180:
-            body = body[:177].rstrip() + "..."
+        if len(body) > 240:
+            body = body[:237].rstrip() + "..."
 
-        font_title = ImageFont.load_default()
-        font_body = ImageFont.load_default()
+        font_label = self._load_font(max(24, width // 42))
+        font_title = self._load_font(max(42, width // 20))
+        font_body = self._load_font(max(26, width // 42), bold=False)
+        font_stat = self._load_font(max(22, width // 52), bold=False)
 
-        x_pad = max(40, width // 18)
-        y = max(60, height // 8)
-        draw.text((x_pad, y), "CLIPFORGE PREVIEW", fill=(255, 255, 255), font=font_title)
-        y += 48
-        draw.text((x_pad, y), title[:80], fill=(255, 255, 255), font=font_title)
-        y += 42
-        draw.text((x_pad, y), f"Visual: {visual_type}", fill=(230, 230, 235), font=font_body)
-        y += 42
+        x_pad = max(64, width // 16)
+        y = max(58, height // 10)
+        draw.text((x_pad, y), "CLIPFORGE PREVIEW", fill=accent, font=font_label)
+        y += int(height * 0.08)
 
-        wrapped_body = self._wrap_preview_text(body, width=max(50, width // 14))
-        for line in wrapped_body.splitlines()[:8]:
-            draw.text((x_pad, y), line, fill=(245, 245, 245), font=font_body)
-            y += 28
+        wrapped_title = textwrap.wrap(title[:110], width=max(16, width // 18))[:3]
+        for line in wrapped_title:
+            draw.text((x_pad, y), line, fill=(255, 255, 255), font=font_title)
+            y += int(font_title.size * 1.1)
 
-        footer = "Fallback visual generated locally because no stock media was available."
-        draw.text((x_pad, height - max(30, height // 14)), footer, fill=(220, 220, 220), font=font_body)
+        y += max(14, height // 60)
+        meta = f"Visual direction: {visual_type}"
+        draw.text((x_pad, y), meta, fill=(218, 223, 235), font=font_body)
+        y += int(font_body.size * 1.8)
+
+        wrapped_body = self._wrap_preview_text(body, width=max(22, width // 30))
+        for line in wrapped_body.splitlines()[:5]:
+            draw.text((x_pad, y), line, fill=(235, 237, 243), font=font_body)
+            y += int(font_body.size * 1.5)
+
+        duration_label = f"Scene length  {scene.get('duration', 0):.1f}s"
+        query_label = (scene.get("primary_query") or scene.get("query") or "general").strip()[:24]
+        draw.text((int(width * 0.75), int(height * 0.15)), "EDITORIAL", fill=(13, 16, 24), font=font_label)
+        draw.text((int(width * 0.75), int(height * 0.35)), "QUERY", fill=accent, font=font_stat)
+        draw.text((int(width * 0.75), int(height * 0.42)), query_label.upper(), fill=(255, 255, 255), font=font_body)
+        draw.text((int(width * 0.75), int(height * 0.56)), "TIMING", fill=accent, font=font_stat)
+        draw.text((int(width * 0.75), int(height * 0.63)), duration_label.upper(), fill=(255, 255, 255), font=font_body)
+
+        footer = "Fallback visual generated because no stock footage was available for this scene."
+        draw.text((x_pad, height - max(48, height // 12)), footer, fill=(198, 203, 216), font=font_stat)
 
         fd, temp_path = tempfile.mkstemp(prefix="clipforge_fallback_", suffix=".png")
         os.close(fd)
@@ -320,11 +406,19 @@ class VideoBuilder:
         return temp_path
 
     def _wrap_preview_text(self, text: str, width: int = 60) -> str:
-        import textwrap
-
         if not text:
             return ""
         return "\n".join(textwrap.wrap(text, width=width))
+
+    def _load_font(self, size: int, bold: bool = True) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+        """Load a system font when available to avoid bitmap-default typography."""
+        candidates = _FONT_CANDIDATES if bold else [p.replace("Bold", "").replace("-Bold", "") for p in _FONT_CANDIDATES]
+        for path in candidates:
+            try:
+                return ImageFont.truetype(path, size)
+            except (OSError, IOError):
+                continue
+        return ImageFont.load_default()
 
     def _resize_and_crop(self, clip: Any, width: int, height: int) -> Any:
         """Resize and centre-crop a clip to fill (width, height)."""

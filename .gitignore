@@ -37,3 +37,9 @@ dist/
 build/
 *.egg-info/
 .pytest_cache/
+
+# Temp files and starter kits
+test_patch.txt
+*.pptx
+codex-cli-skills-starter/
+.codex

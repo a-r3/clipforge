@@ -112,47 +112,87 @@ def thumbnail(
     bg_rgb = _parse_color(bg_hex)
     txt_rgb = _parse_color(txt_hex)
     acc_rgb = _parse_color(acc_hex)
+    panel_rgb = _blend(bg_rgb, (6, 8, 14), 0.72)
+    panel_edge = _blend(acc_rgb, (255, 255, 255), 0.18)
 
     img = Image.new("RGB", (width, height), color=bg_rgb)
     draw = ImageDraw.Draw(img)
 
-    # Subtle gradient overlay (darken bottom)
+    # Layered background so the result reads more like a real thumbnail than a flat poster.
     for i in range(height):
-        ratio = (i / height) ** 2 * 0.5
-        strip = _blend(bg_rgb, (0, 0, 0), ratio)
+        ratio = i / max(height - 1, 1)
+        strip = _blend(bg_rgb, (3, 5, 10), 0.68 * (ratio**1.4))
         draw.line([(0, i), (width, i)], fill=strip)
 
-    # Accent bar at bottom
+    draw.ellipse(
+        [int(width * -0.10), int(height * -0.12), int(width * 0.52), int(height * 0.66)],
+        fill=_blend(acc_rgb, bg_rgb, 0.55),
+    )
+    draw.ellipse(
+        [int(width * 0.54), int(height * 0.10), int(width * 1.10), int(height * 0.96)],
+        fill=_blend(acc_rgb, (0, 0, 0), 0.55),
+    )
+
+    panel = [int(width * 0.06), int(height * 0.10), int(width * 0.72), int(height * 0.86)]
+    draw.rounded_rectangle(panel, radius=max(18, width // 55), fill=panel_rgb, outline=panel_edge, width=max(2, width // 320))
+    draw.rounded_rectangle(
+        [int(width * 0.75), int(height * 0.12), int(width * 0.93), int(height * 0.24)],
+        radius=max(14, width // 60),
+        fill=acc_rgb,
+    )
+    draw.rounded_rectangle(
+        [int(width * 0.75), int(height * 0.30), int(width * 0.93), int(height * 0.72)],
+        radius=max(18, width // 60),
+        fill=_blend(bg_rgb, (5, 7, 12), 0.52),
+        outline=_blend(acc_rgb, (255, 255, 255), 0.1),
+        width=max(2, width // 420),
+    )
+
     bar_h = max(8, height // 35)
     draw.rectangle([0, height - bar_h, width, height], fill=acc_rgb)
 
-    # Brand name
+    eyebrow_size = max(22, width // 26)
+    eyebrow_font = _find_font(eyebrow_size)
+    draw.text((int(width * 0.10), int(height * 0.15)), "YOUTUBE READY", font=eyebrow_font, fill=acc_rgb)
+
     if brand_name:
         brand_size = max(22, width // 22)
         font_brand = _find_font(brand_size)
         draw.text(
-            (width // 2, height // 9),
+            (int(width * 0.84), int(height * 0.18)),
             brand_name.upper(),
             font=font_brand,
-            fill=acc_rgb,
+            fill=panel_rgb,
             anchor="mm",
         )
 
     # Main text — word-wrapped
-    main_size = max(44, width // 11)
+    main_size = max(54, width // 10)
     font_main = _find_font(main_size)
-    lines = _wrap_text(draw, text, font_main, int(width * 0.85))
+    lines = _wrap_text(draw, text, font_main, int(width * 0.56))
 
     line_h = main_size + max(8, main_size // 5)
-    total_h = len(lines) * line_h
-    y = (height - total_h) // 2
+    y = int(height * 0.28)
 
     for line in lines:
-        # Shadow
-        draw.text((width // 2 + 2, y + 2), line, font=font_main, fill=(0, 0, 0), anchor="mt")
-        # Text
-        draw.text((width // 2, y), line, font=font_main, fill=txt_rgb, anchor="mt")
+        draw.text((int(width * 0.10) + 4, y + 4), line, font=font_main, fill=(0, 0, 0))
+        draw.text((int(width * 0.10), y), line, font=font_main, fill=txt_rgb)
         y += line_h
+
+    support_font = _find_font(max(22, width // 28))
+    support = "Clear promise. Strong contrast. One dominant idea."
+    draw.text(
+        (int(width * 0.10), min(height - int(height * 0.16), y + int(height * 0.04))),
+        support,
+        font=support_font,
+        fill=_blend(txt_rgb, (180, 188, 205), 0.25),
+    )
+
+    chip_font = _find_font(max(24, width // 34))
+    draw.text((int(width * 0.78), int(height * 0.37)), "HOOK", font=chip_font, fill=acc_rgb)
+    draw.text((int(width * 0.78), int(height * 0.45)), "HIGH CTR", font=support_font, fill=txt_rgb)
+    draw.text((int(width * 0.78), int(height * 0.60)), "BOLD", font=chip_font, fill=acc_rgb)
+    draw.text((int(width * 0.78), int(height * 0.68)), "VISUAL", font=support_font, fill=txt_rgb)
 
     ensure_dir(out_path.parent)
     fmt = "PNG" if out_path.suffix.lower() == ".png" else "JPEG"
