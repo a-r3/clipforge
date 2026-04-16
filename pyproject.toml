@@ -25,12 +25,6 @@ classifiers = [
     "Topic :: Multimedia :: Video",
     "Topic :: Utilities",
 ]
-
-[project.urls]
-Homepage = "https://github.com/clipforge/clipforge"
-Documentation = "https://github.com/clipforge/clipforge#readme"
-"Bug Tracker" = "https://github.com/clipforge/clipforge/issues"
-Changelog = "https://github.com/clipforge/clipforge/blob/main/docs/changelog.md"
 dependencies = [
     "click>=8.0",
     "python-dotenv>=1.0",
@@ -42,6 +36,12 @@ dependencies = [
     # (2.x) changed the API in breaking ways; pin to avoid surprises.
     "moviepy==1.0.3",
 ]
+
+[project.urls]
+Homepage = "https://github.com/clipforge/clipforge"
+Documentation = "https://github.com/clipforge/clipforge#readme"
+"Bug Tracker" = "https://github.com/clipforge/clipforge/issues"
+Changelog = "https://github.com/clipforge/clipforge/blob/main/docs/changelog.md"
 
 [project.optional-dependencies]
 tts = [

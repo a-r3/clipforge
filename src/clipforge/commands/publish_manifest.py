@@ -56,6 +56,8 @@ def publish_manifest_cmd() -> None:
               help="Opening hook line.")
 @click.option("--social-json", default="",
               help="Social pack JSON file to import title/caption/hashtags/cta/hook from.")
+@click.option("--optimization-report", default="",
+              help="Optimization report JSON file to attach next-video guidance from.")
 @click.option("--publish-at", default="",
               help="Scheduled publish time (ISO-8601, e.g. 2026-05-01T18:00:00Z).")
 @click.option("--timezone", "tz", default="UTC",
@@ -98,6 +100,7 @@ def create_manifest(
     cta: str,
     hook: str,
     social_json: str,
+    optimization_report: str,
     publish_at: str,
     tz: str,
     campaign_name: str,
@@ -115,6 +118,7 @@ def create_manifest(
     """Create a new publish manifest JSON file."""
     import json as _json
 
+    from clipforge.optimize.models import OptimizationReport
     from clipforge.publish_manifest import PublishManifest
 
     # Import social metadata from a social pack JSON if provided
@@ -133,6 +137,16 @@ def create_manifest(
     # Derive job name from video filename if not given
     if not job_name:
         job_name = Path(video_file).stem
+
+    extra: dict[str, object] = {}
+    if optimization_report:
+        rp = Path(optimization_report)
+        if not rp.exists():
+            click.echo(f"  Error: optimization-report file not found: {optimization_report}", err=True)
+            sys.exit(1)
+        report = OptimizationReport.load(rp)
+        if report.next_video_brief:
+            extra["optimization_notes"] = report.next_video_brief
 
     m = PublishManifest(
         job_name=job_name,
@@ -159,6 +173,7 @@ def create_manifest(
         brand_name=brand_name,
         notes=notes,
         status=status,
+        extra=extra,
     )
 
     # Validate before saving
@@ -245,6 +260,14 @@ def show_manifest(manifest_file: str, as_json: bool) -> None:
     if m.notes:
         click.echo()
         click.echo(f"  Notes: {m.notes}")
+    opt_notes = m.extra.get("optimization_notes", {})
+    if opt_notes:
+        click.echo()
+        click.echo("  Optimization notes")
+        for key in ("platform", "template_ref", "publish_day", "publish_window_utc"):
+            if opt_notes.get(key):
+                label = key.replace("_", " ").title()
+                click.echo(f"  {f'  {label}':<22} {opt_notes[key]}")
     click.echo()
     click.echo(f"  Created  : {m.created_at}")
     click.echo(f"  Updated  : {m.updated_at}")

@@ -149,17 +149,24 @@ def _studio_build(console, Prompt, Confirm) -> None:
         choices=["silent", "music", "voiceover", "voiceover+music"],
         default="silent",
     )
+    optimization_report = Prompt.ask(
+        "  Optimization report path (optional)",
+        default="",
+    )
 
     # Dry-run preview first
     console.print("\n  [dim]Previewing scene plan...[/dim]")
-    rc = _invoke([
+    cmd = [
         "make", "--script-file", script,
         "--platform", platform,
         "--style", style,
         "--audio-mode", audio,
         "--output", output,
         "--dry-run",
-    ])
+    ]
+    if optimization_report:
+        cmd += ["--optimization-report", optimization_report]
+    rc = _invoke(cmd)
     if rc != 0:
         console.print("  [red]Preview failed. Check your script file.[/red]")
         return
@@ -171,13 +178,16 @@ def _studio_build(console, Prompt, Confirm) -> None:
         return
 
     console.print("\n  [bold]Rendering...[/bold]")
-    _invoke([
+    cmd = [
         "make", "--script-file", script,
         "--platform", platform,
         "--style", style,
         "--audio-mode", audio,
         "--output", output,
-    ])
+    ]
+    if optimization_report:
+        cmd += ["--optimization-report", optimization_report]
+    _invoke(cmd)
 
 
 def _studio_social_pack(console, Prompt) -> None:
@@ -193,9 +203,12 @@ def _studio_social_pack(console, Prompt) -> None:
         default="reels",
     )
     brand = Prompt.ask("  Brand name (optional)", default="")
+    optimization_report = Prompt.ask("  Optimization report path (optional)", default="")
     cmd = ["social-pack", "--script-file", script, "--platform", platform]
     if brand:
         cmd += ["--brand-name", brand]
+    if optimization_report:
+        cmd += ["--optimization-report", optimization_report]
     _invoke(cmd)
 
 
@@ -233,6 +246,7 @@ def _studio_publish_prep(console, Prompt, Confirm) -> None:
         default="reels",
     )
     job_name = Prompt.ask("  Job name (short label)", default=Path(video).stem)
+    optimization_report = Prompt.ask("  Optimization report path (optional)", default="")
     manifest_out = Prompt.ask(
         "  Save manifest to",
         default=f"{job_name}.manifest.json",
@@ -246,6 +260,8 @@ def _studio_publish_prep(console, Prompt, Confirm) -> None:
         "--job-name", job_name,
         "--output", manifest_out,
     ]
+    if optimization_report:
+        cmd += ["--optimization-report", optimization_report]
     rc = _invoke(cmd)
     if rc != 0:
         console.print("  [red]Manifest creation failed.[/red]")

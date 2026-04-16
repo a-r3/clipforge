@@ -141,6 +141,7 @@ class Optimizer:
             trend=trend,
             trend_pct=trend_pct,
             summary_metrics=_summary_metrics(filtered),
+            next_video_brief=self._build_next_video_brief(filtered, recs, filters),
         )
 
     # ── Filtering ─────────────────────────────────────────────────────────────
@@ -698,6 +699,114 @@ class Optimizer:
             "by_campaign": _group_avgs(lambda r: r.campaign_name or "(no campaign)"),
         }
 
+    def _build_next_video_brief(
+        self,
+        records: list[ContentAnalytics],
+        recs: list[Recommendation],
+        filters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Convert recommendations into a practical brief for the next video."""
+        if not records:
+            return {}
+
+        top = self._top_performers(records)
+        top_video = top.get("top_by_views", {})
+        by_template = top.get("by_template", {})
+        by_platform = top.get("by_platform", {})
+
+        timing_recs = [r for r in recs if r.category == "timing"]
+        ctr_recs = [r for r in recs if r.category == "ctr"]
+        retention_recs = [r for r in recs if r.category == "retention"]
+        frequency_recs = [r for r in recs if r.category == "frequency"]
+        trend_recs = [r for r in recs if r.category == "trend"]
+        template_recs = [r for r in recs if r.category == "template"]
+        platform_recs = [r for r in recs if r.category == "platform"]
+
+        platform = filters.get("platform") or _extract_evidence_value(platform_recs, "best_platform")
+        if not platform:
+            platform = _best_group_key(by_platform, fallback=top_video.get("platform", ""))
+
+        template = filters.get("template") or _extract_evidence_value(template_recs, "best_template")
+        if not template:
+            template = _best_group_key(
+                {k: v for k, v in by_template.items() if k != "(no template)"},
+                fallback="",
+            )
+
+        publish_day = _extract_evidence_value(timing_recs, "best_day")
+        publish_hour = _extract_evidence_value(timing_recs, "best_hour_utc")
+        if publish_hour != "":
+            publish_window = f"{int(publish_hour):02d}:00 UTC"
+        else:
+            publish_window = ""
+
+        title_direction = (
+            "Use a sharper promise-led title: lead with the payoff, add a number or contrast, "
+            "and keep the wording feed-scannable."
+            if any(r.severity in ("high", "medium") for r in ctr_recs)
+            else "Keep the current title pattern close to your top performers: concise, specific, "
+            "and outcome-first."
+        )
+        hook_direction = (
+            "Front-load the strongest claim or visual in the first 3 seconds. Cut setup and open "
+            "with the result, surprise, or tension point."
+            if any(r.severity in ("high", "medium") for r in retention_recs)
+            else "Keep the opening tight and immediate. Start with the most concrete payoff instead "
+            "of context or scene-setting."
+        )
+        caption_direction = _caption_direction_for_platform(platform)
+        thumbnail_direction = (
+            "Raise thumbnail contrast, use one dominant visual idea, and if you add text keep it to "
+            "3-5 bold words."
+            if any(r.severity in ("high", "medium") for r in ctr_recs)
+            else "Stay close to the visual style of your best-performing video: one clear subject, "
+            "clean hierarchy, and minimal clutter."
+        )
+
+        cadence = "Maintain a steady weekly cadence."
+        long_gap_rec = next((r for r in frequency_recs if "Longest publishing gap" in r.title), None)
+        if long_gap_rec:
+            avg_gap = long_gap_rec.evidence.get("avg_gap_days")
+            cadence = (
+                f"Reduce publishing gaps. Aim for roughly every {max(3, min(7, int(round(avg_gap or 7))))} days."
+            )
+        elif any("Consistent high-frequency posting" in r.title for r in frequency_recs):
+            cadence = "Keep your current high-frequency cadence; consistency is helping."
+
+        rationale = [r.title for r in recs[:3]]
+        if trend_recs and trend_recs[0].severity in ("high", "medium"):
+            rationale.append("Trend signal says your recent content needs a format refresh.")
+
+        brief = {
+            "platform": platform,
+            "template_ref": template,
+            "publish_day": publish_day,
+            "publish_window_utc": publish_window,
+            "title_direction": title_direction,
+            "hook_direction": hook_direction,
+            "caption_direction": caption_direction,
+            "thumbnail_direction": thumbnail_direction,
+            "cadence_direction": cadence,
+            "reference_video": {
+                "job_name": top_video.get("job_name", ""),
+                "platform": top_video.get("platform", ""),
+                "views": top_video.get("views", 0),
+            },
+            "action_checklist": _build_action_checklist(
+                platform=platform,
+                template=template,
+                publish_day=publish_day,
+                publish_window=publish_window,
+                title_direction=title_direction,
+                hook_direction=hook_direction,
+                caption_direction=caption_direction,
+                thumbnail_direction=thumbnail_direction,
+                cadence=cadence,
+            ),
+            "rationale": [item for item in rationale if item],
+        }
+        return {k: v for k, v in brief.items() if v not in ("", [], {})}
+
 
 # ── Private helpers ───────────────────────────────────────────────────────────
 
@@ -717,6 +826,62 @@ def _group_by(
     for r in records:
         out[key_fn(r)].append(r)
     return dict(out)
+
+
+def _extract_evidence_value(recs: list[Recommendation], key: str) -> Any:
+    for rec in recs:
+        if key in rec.evidence:
+            return rec.evidence[key]
+    return ""
+
+
+def _best_group_key(groups: dict[str, Any], fallback: str = "") -> str:
+    if not groups:
+        return fallback
+    return max(
+        groups,
+        key=lambda key: (
+            groups[key].get("avg_engagement", 0),
+            groups[key].get("avg_views", 0),
+            groups[key].get("count", 0),
+        ),
+    )
+
+
+def _caption_direction_for_platform(platform: str) -> str:
+    if platform == "youtube":
+        return "Open the caption with the value proposition, add context after it, and end with a clear CTA."
+    if platform in {"youtube-shorts", "tiktok", "reels"}:
+        return "Keep the first line punchy, reinforce the hook, and end with one simple CTA or prompt to comment."
+    return "Lead with the payoff, keep the copy short, and end with one clear next action."
+
+
+def _build_action_checklist(
+    *,
+    platform: str,
+    template: str,
+    publish_day: str,
+    publish_window: str,
+    title_direction: str,
+    hook_direction: str,
+    caption_direction: str,
+    thumbnail_direction: str,
+    cadence: str,
+) -> list[str]:
+    items: list[str] = []
+    if platform:
+        items.append(f"Build the next video primarily for {platform}.")
+    if template:
+        items.append(f"Start from template '{template}' unless the topic clearly requires a new format.")
+    if publish_day or publish_window:
+        timing_bits = " ".join(bit for bit in [publish_day, publish_window] if bit).strip()
+        items.append(f"Target the publish window around {timing_bits}.")
+    items.append(f"Title pass: {title_direction}")
+    items.append(f"Hook pass: {hook_direction}")
+    items.append(f"Caption pass: {caption_direction}")
+    items.append(f"Thumbnail pass: {thumbnail_direction}")
+    items.append(f"Cadence: {cadence}")
+    return items
 
 
 def _parse_dt(iso_str: str | None) -> datetime | None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import patch
 
 from clipforge.builder import VideoBuilder, make_video
@@ -136,3 +137,19 @@ def test_build_aborts_gracefully_without_moviepy(tmp_path, caplog):
                 builder.build(scenes, config, str(output))
             except Exception:
                 pass  # Expected — moviepy unavailable
+
+
+def test_render_fallback_card_image_creates_visible_asset(tmp_path):
+    """Fallback scenes should render a generated preview card image."""
+    builder = VideoBuilder()
+    scene = {
+        "primary_query": "workflow automation",
+        "visual_type": "technology",
+        "text": "Teams can reuse one script across multiple short-form outputs.",
+    }
+    path = builder._render_fallback_card_image(scene, (36, 74, 142), 1280, 720)
+    try:
+        assert Path(path).exists()
+        assert Path(path).stat().st_size > 0
+    finally:
+        Path(path).unlink(missing_ok=True)

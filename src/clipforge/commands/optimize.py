@@ -278,6 +278,33 @@ def _print_report(report) -> None:
         )
         click.echo()
 
+    brief = r.next_video_brief
+    if brief:
+        click.echo("Next video brief:")
+        if brief.get("platform"):
+            click.echo(f"  Platform:   {brief['platform']}")
+        if brief.get("template_ref"):
+            click.echo(f"  Template:   {brief['template_ref']}")
+        if brief.get("publish_day") or brief.get("publish_window_utc"):
+            timing_bits = [brief.get("publish_day", ""), brief.get("publish_window_utc", "")]
+            click.echo(f"  Timing:     {'  '.join(bit for bit in timing_bits if bit)}")
+        if brief.get("title_direction"):
+            click.echo(f"  Title:      {brief['title_direction']}")
+        if brief.get("hook_direction"):
+            click.echo(f"  Hook:       {brief['hook_direction']}")
+        if brief.get("caption_direction"):
+            click.echo(f"  Caption:    {brief['caption_direction']}")
+        if brief.get("thumbnail_direction"):
+            click.echo(f"  Thumbnail:  {brief['thumbnail_direction']}")
+        if brief.get("cadence_direction"):
+            click.echo(f"  Cadence:    {brief['cadence_direction']}")
+        checklist = brief.get("action_checklist", [])
+        if checklist:
+            click.echo("  Checklist:")
+            for item in checklist:
+                click.echo(f"    - {item}")
+        click.echo()
+
     # Recommendations
     if not r.recommendations:
         click.echo("No recommendations — keep doing what you're doing!")

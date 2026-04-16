@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from clipforge.social_pack import SocialPackGenerator, generate_social_pack
+from clipforge.social_pack import (
+    SocialPackGenerator,
+    attach_optimization_notes,
+    generate_social_pack,
+)
 
 SAMPLE_SCRIPT = (
     "Artificial intelligence is transforming how businesses operate today.\n\n"
@@ -150,6 +154,26 @@ def test_save_txt(tmp_path):
     assert "TITLE" in text
     assert "HASHTAGS" in text
     assert pack["hashtags"] in text
+
+
+def test_attach_optimization_notes(tmp_path):
+    """Optimization report brief should be attached to the social pack."""
+    from clipforge.optimize.models import OptimizationReport
+
+    pack = generate_social_pack(SAMPLE_SCRIPT, platform="reels", brand_name="Brand")
+    report = OptimizationReport(
+        source_records=8,
+        next_video_brief={
+            "title_direction": "Lead with the payoff.",
+            "action_checklist": ["Do X.", "Do Y."],
+        },
+    )
+    report_path = tmp_path / "opt.json"
+    report.save(report_path)
+
+    enriched = attach_optimization_notes(pack, str(report_path))
+    assert "optimization_notes" in enriched
+    assert enriched["optimization_notes"]["title_direction"] == "Lead with the payoff."
 
 
 # ---------------------------------------------------------------------------

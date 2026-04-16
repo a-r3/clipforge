@@ -268,3 +268,16 @@ def generate_social_pack(
     config = {"platform": platform, "brand_name": brand_name}
     generator = SocialPackGenerator()
     return generator.generate(scenes, config)
+
+
+def attach_optimization_notes(pack: dict[str, Any], report_path: str) -> dict[str, Any]:
+    """Attach next-video optimization notes from an OptimizationReport JSON file."""
+    from clipforge.optimize.models import OptimizationReport
+
+    report = OptimizationReport.load(report_path)
+    if not report.next_video_brief:
+        return pack
+
+    out = dict(pack)
+    out["optimization_notes"] = report.next_video_brief
+    return out

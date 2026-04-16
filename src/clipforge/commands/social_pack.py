@@ -20,6 +20,8 @@ import click
               help="Your brand name (included in title and CTAs).")
 @click.option("--show-variants", is_flag=True, default=False,
               help="Show alternative title/hook/CTA options.")
+@click.option("--optimization-report", default=None, metavar="PATH",
+              help="Optional optimization report JSON to attach next-video guidance.")
 @click.option("--save-json", default=None, metavar="PATH",
               help="Save the full pack to a JSON file.")
 @click.option("--save-txt", default=None, metavar="PATH",
@@ -30,6 +32,7 @@ def social_pack(
     platform: str,
     brand_name: str,
     show_variants: bool,
+    optimization_report: str | None,
     save_json: str | None,
     save_txt: str | None,
 ) -> None:
@@ -63,9 +66,11 @@ def social_pack(
         )
         sys.exit(1)
 
-    from clipforge.social_pack import generate_social_pack
+    from clipforge.social_pack import attach_optimization_notes, generate_social_pack
 
     pack = generate_social_pack(text, platform=platform, brand_name=brand_name)
+    if optimization_report:
+        pack = attach_optimization_notes(pack, optimization_report)
 
     # ── Clean primary output ─────────────────────────────────────────────
     click.echo()
@@ -79,6 +84,20 @@ def social_pack(
     click.echo("  Caption:")
     for line in pack["caption"].splitlines():
         click.echo(f"  {line}")
+
+    notes = pack.get("optimization_notes", {})
+    if notes:
+        click.echo()
+        click.echo("  Optimization notes:")
+        for key in ("title_direction", "hook_direction", "caption_direction", "thumbnail_direction"):
+            if notes.get(key):
+                label = key.replace("_", " ").replace(" direction", "").title()
+                click.echo(f"    {label:<10} {notes[key]}")
+        checklist = notes.get("action_checklist", [])
+        if checklist:
+            click.echo("    Checklist")
+            for item in checklist:
+                click.echo(f"      - {item}")
 
     # ── Optional variants section ────────────────────────────────────────
     if show_variants:
@@ -159,5 +178,18 @@ def _write_txt(pack: dict, path: str) -> None:
         if len(cta_variants) > 1:
             lines.append("CTA options:")
             lines.extend(f"  {c}" for c in cta_variants)
+
+    notes = pack.get("optimization_notes", {})
+    if notes:
+        lines += ["", "OPTIMIZATION NOTES", "------------------"]
+        for key in ("title_direction", "hook_direction", "caption_direction", "thumbnail_direction"):
+            if notes.get(key):
+                label = key.replace("_", " ").replace(" direction", "").title()
+                lines.append(f"{label}:")
+                lines.append(f"  {notes[key]}")
+        checklist = notes.get("action_checklist", [])
+        if checklist:
+            lines.append("Checklist:")
+            lines.extend(f"  - {item}" for item in checklist)
 
     Path(path).write_text("\n".join(lines), encoding="utf-8")

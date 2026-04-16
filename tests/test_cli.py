@@ -188,6 +188,38 @@ def test_cli_social_pack_save_json(tmp_path):
     assert "hashtags" in data
 
 
+def test_cli_social_pack_with_optimization_report(tmp_path):
+    """social-pack should display optimization notes when a report is provided."""
+    from clipforge.optimize.models import OptimizationReport
+
+    script = tmp_path / "script.txt"
+    script.write_text("AI is transforming business today.", encoding="utf-8")
+    report = OptimizationReport(
+        source_records=6,
+        next_video_brief={
+            "title_direction": "Lead with the payoff.",
+            "hook_direction": "Open with the strongest claim.",
+            "action_checklist": ["Do X.", "Do Y."],
+        },
+    )
+    report_path = tmp_path / "opt.json"
+    report.save(report_path)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "social-pack", "--script-file", str(script),
+            "--platform", "reels",
+            "--optimization-report", str(report_path),
+        ],
+    )
+    assert result.exit_code == 0
+    assert "Optimization notes:" in result.output
+    assert "Lead with the payoff." in result.output
+    assert "Checklist" in result.output
+
+
 def test_cli_social_pack_save_txt(tmp_path):
     """social-pack --save-txt should write a plain-text file."""
     script = tmp_path / "script.txt"
@@ -209,6 +241,39 @@ def test_cli_social_pack_save_txt(tmp_path):
     assert "HASHTAGS" in content
 
 
+def test_cli_social_pack_save_txt_with_optimization_report(tmp_path):
+    """social-pack TXT output should include optimization notes when present."""
+    from clipforge.optimize.models import OptimizationReport
+
+    script = tmp_path / "script.txt"
+    script.write_text("Technology is changing the world.", encoding="utf-8")
+    out_txt = tmp_path / "pack.txt"
+    report = OptimizationReport(
+        source_records=6,
+        next_video_brief={
+            "thumbnail_direction": "Use a single dominant visual.",
+            "action_checklist": ["Do X."],
+        },
+    )
+    report_path = tmp_path / "opt.json"
+    report.save(report_path)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "social-pack", "--script-file", str(script),
+            "--platform", "tiktok",
+            "--optimization-report", str(report_path),
+            "--save-txt", str(out_txt),
+        ],
+    )
+    assert result.exit_code == 0
+    content = out_txt.read_text()
+    assert "OPTIMIZATION NOTES" in content
+    assert "Use a single dominant visual." in content
+
+
 def test_cli_make_dry_run(tmp_path):
     """make --dry-run should print planned scenes without rendering."""
     script = tmp_path / "script.txt"
@@ -223,6 +288,40 @@ def test_cli_make_dry_run(tmp_path):
     )
     assert result.exit_code == 0
     assert "Scene" in result.output or "scene" in result.output
+
+
+def test_cli_make_dry_run_with_optimization_report(tmp_path):
+    """make --dry-run should show optimization guidance when provided."""
+    from clipforge.optimize.models import OptimizationReport
+
+    script = tmp_path / "script.txt"
+    script.write_text(
+        "AI is transforming business today.\n\nTeams using AI gain advantages.",
+        encoding="utf-8",
+    )
+    report = OptimizationReport(
+        source_records=6,
+        next_video_brief={
+            "title_direction": "Lead with the payoff.",
+            "hook_direction": "Open with the strongest claim.",
+        },
+    )
+    report_path = tmp_path / "opt.json"
+    report.save(report_path)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "make",
+            "--script-file", str(script),
+            "--dry-run",
+            "--optimization-report", str(report_path),
+        ],
+    )
+    assert result.exit_code == 0
+    assert "Optimization notes:" in result.output
+    assert "Lead with the payoff." in result.output
 
 
 def test_cli_make_invalid_platform_rejected(tmp_path):
@@ -615,6 +714,36 @@ def test_cli_publish_manifest_create_from_social_json(tmp_path):
     assert data["hashtags"] == "#AI #reels"
 
 
+def test_cli_publish_manifest_create_with_optimization_report(tmp_path):
+    """publish-manifest create should attach optimization notes into extra."""
+    from clipforge.optimize.models import OptimizationReport
+
+    video = tmp_path / "video.mp4"
+    video.write_bytes(b"fake")
+    report = OptimizationReport(
+        source_records=6,
+        next_video_brief={
+            "platform": "youtube",
+            "template_ref": "tmpl-good",
+            "title_direction": "Lead with the payoff.",
+        },
+    )
+    report_path = tmp_path / "opt.json"
+    report.save(report_path)
+    out = tmp_path / "m.json"
+    runner = CliRunner()
+    result = runner.invoke(main, [
+        "publish-manifest", "create",
+        "--video-file", str(video),
+        "--optimization-report", str(report_path),
+        "--output", str(out),
+    ])
+    assert result.exit_code == 0
+    data = json.loads(out.read_text())
+    assert data["optimization_notes"]["platform"] == "youtube"
+    assert data["optimization_notes"]["template_ref"] == "tmpl-good"
+
+
 def test_cli_publish_manifest_show(tmp_path):
     """publish-manifest show should display manifest fields."""
     from clipforge.publish_manifest import PublishManifest
@@ -626,6 +755,25 @@ def test_cli_publish_manifest_show(tmp_path):
     assert result.exit_code == 0
     assert "showtest" in result.output
     assert "tiktok" in result.output
+
+
+def test_cli_publish_manifest_show_optimization_notes(tmp_path):
+    """publish-manifest show should render optimization notes when present."""
+    from clipforge.publish_manifest import PublishManifest
+
+    m = PublishManifest(
+        job_name="showtest",
+        platform="tiktok",
+        video_path="v.mp4",
+        extra={"optimization_notes": {"platform": "youtube", "publish_day": "Thursday"}},
+    )
+    p = tmp_path / "m.json"
+    m.save(p)
+    runner = CliRunner()
+    result = runner.invoke(main, ["publish-manifest", "show", str(p)])
+    assert result.exit_code == 0
+    assert "Optimization notes" in result.output
+    assert "Thursday" in result.output
 
 
 def test_cli_publish_manifest_show_json(tmp_path):
@@ -1328,6 +1476,8 @@ def test_cli_optimize_report_with_records(tmp_path):
     result = runner.invoke(main, ["optimize", "report", "--store", str(store_dir)])
     assert result.exit_code == 0
     assert "records" in result.output.lower()
+    assert "Next video brief:" in result.output
+    assert "Checklist:" in result.output
 
 
 def test_cli_optimize_report_json(tmp_path):
@@ -1339,6 +1489,8 @@ def test_cli_optimize_report_json(tmp_path):
     assert "source_records" in data
     assert "recommendations" in data
     assert "trend" in data
+    assert "next_video_brief" in data
+    assert "action_checklist" in data["next_video_brief"]
 
 
 def test_cli_optimize_report_low_ctr_produces_recs(tmp_path):

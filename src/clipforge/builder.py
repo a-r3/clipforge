@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import logging
 import os
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from PIL import Image, ImageDraw, ImageFont
 
 from clipforge.audio_engine import AudioEngine
 from clipforge.constants import DEFAULT_PLATFORM
@@ -21,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 # Fallback solid-colour background colours per visual type
 _BG_COLORS: dict[str, tuple[int, int, int]] = {
-    "technology": (10, 10, 30),
-    "business": (20, 20, 40),
-    "people": (30, 15, 15),
-    "city": (15, 15, 25),
-    "nature": (10, 30, 10),
-    "abstract": (20, 20, 20),
+    "technology": (36, 74, 142),
+    "business": (54, 68, 107),
+    "people": (124, 66, 63),
+    "city": (58, 64, 88),
+    "nature": (46, 104, 74),
+    "abstract": (72, 72, 96),
 }
 
 
@@ -227,8 +230,8 @@ class VideoBuilder:
             except Exception as exc:
                 logger.warning("Failed to load asset %s: %s — using fallback", asset_path, exc)
 
-        # Fallback to solid colour background
-        return self._create_color_clip(color, duration, width, height)
+        # Fallback to a generated visual card so the output is still reviewable.
+        return self._create_fallback_card_clip(scene, color, duration, width, height)
 
     def _load_video_clip(self, path: str, duration: float, width: int, height: int) -> Any:
         """Load a VideoFileClip and crop/resize to fill the frame."""
@@ -254,6 +257,74 @@ class VideoBuilder:
         from moviepy.editor import ColorClip  # type: ignore[import]
 
         return ColorClip(size=(width, height), color=color, duration=duration)
+
+    def _create_fallback_card_clip(
+        self,
+        scene: dict[str, Any],
+        color: tuple[int, int, int],
+        duration: float,
+        width: int,
+        height: int,
+    ) -> Any:
+        """Create a generated fallback card clip with visible scene context."""
+        from moviepy.editor import ImageClip  # type: ignore[import]
+
+        image_path = self._render_fallback_card_image(scene, color, width, height)
+        return ImageClip(image_path).set_duration(duration)
+
+    def _render_fallback_card_image(
+        self,
+        scene: dict[str, Any],
+        color: tuple[int, int, int],
+        width: int,
+        height: int,
+    ) -> str:
+        """Render a fallback still image for a scene and return its temp path."""
+        image = Image.new("RGB", (width, height), color)
+        draw = ImageDraw.Draw(image)
+
+        # Add some simple bands so fallback frames don't read as flat black.
+        accent = tuple(min(255, c + 45) for c in color)
+        draw.rectangle([0, 0, width, max(24, height // 14)], fill=accent)
+        draw.rectangle([0, height - max(36, height // 10), width, height], fill=(18, 18, 24))
+
+        title = (scene.get("primary_query") or scene.get("query") or "ClipForge fallback").strip()
+        visual_type = (scene.get("visual_type") or "abstract").strip().upper()
+        body = (scene.get("text") or "").strip()
+        if len(body) > 180:
+            body = body[:177].rstrip() + "..."
+
+        font_title = ImageFont.load_default()
+        font_body = ImageFont.load_default()
+
+        x_pad = max(40, width // 18)
+        y = max(60, height // 8)
+        draw.text((x_pad, y), "CLIPFORGE PREVIEW", fill=(255, 255, 255), font=font_title)
+        y += 48
+        draw.text((x_pad, y), title[:80], fill=(255, 255, 255), font=font_title)
+        y += 42
+        draw.text((x_pad, y), f"Visual: {visual_type}", fill=(230, 230, 235), font=font_body)
+        y += 42
+
+        wrapped_body = self._wrap_preview_text(body, width=max(50, width // 14))
+        for line in wrapped_body.splitlines()[:8]:
+            draw.text((x_pad, y), line, fill=(245, 245, 245), font=font_body)
+            y += 28
+
+        footer = "Fallback visual generated locally because no stock media was available."
+        draw.text((x_pad, height - max(30, height // 14)), footer, fill=(220, 220, 220), font=font_body)
+
+        fd, temp_path = tempfile.mkstemp(prefix="clipforge_fallback_", suffix=".png")
+        os.close(fd)
+        image.save(temp_path, format="PNG")
+        return temp_path
+
+    def _wrap_preview_text(self, text: str, width: int = 60) -> str:
+        import textwrap
+
+        if not text:
+            return ""
+        return "\n".join(textwrap.wrap(text, width=width))
 
     def _resize_and_crop(self, clip: Any, width: int, height: int) -> Any:
         """Resize and centre-crop a clip to fill (width, height)."""

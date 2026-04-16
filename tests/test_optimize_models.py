@@ -75,6 +75,7 @@ def test_report_defaults():
     assert report.source_records == 0
     assert report.trend == "insufficient_data"
     assert report.recommendations == []
+    assert report.next_video_brief == {}
     assert uuid.UUID(report.report_id)
     assert report.generated_at
 
@@ -113,6 +114,7 @@ def test_report_to_dict():
         source_records=15,
         trend="improving",
         trend_pct=22.5,
+        next_video_brief={"platform": "youtube", "action_checklist": ["Do the thing."]},
         recommendations=[
             Recommendation(category="ctr", severity="high", title="T", description="")
         ],
@@ -121,6 +123,8 @@ def test_report_to_dict():
     assert d["source_records"] == 15
     assert d["trend"] == "improving"
     assert d["trend_pct"] == pytest.approx(22.5)
+    assert d["next_video_brief"]["platform"] == "youtube"
+    assert d["next_video_brief"]["action_checklist"] == ["Do the thing."]
     assert len(d["recommendations"]) == 1
 
 
@@ -137,6 +141,7 @@ def test_report_round_trip():
         recommendations=recs,
         top_performers={"top_by_views": {"views": 5000}},
         summary_metrics={"views": 1234.0},
+        next_video_brief={"platform": "youtube", "publish_day": "Thursday"},
     )
     d = report.to_dict()
     r2 = OptimizationReport.from_dict(d)
@@ -147,6 +152,7 @@ def test_report_round_trip():
     assert len(r2.recommendations) == 1
     assert r2.recommendations[0].category == "timing"
     assert r2.top_performers["top_by_views"]["views"] == 5000
+    assert r2.next_video_brief["publish_day"] == "Thursday"
 
 
 def test_report_save_and_load(tmp_path):

@@ -37,6 +37,8 @@ import click
               help="Your brand name (shown in social pack and overlays).")
 @click.option("--profile", default=None,
               help="Path to a brand profile JSON (see clipforge init-profile).")
+@click.option("--optimization-report", default=None,
+              help="Optional optimization report JSON to review before rendering.")
 @click.option("--dry-run", is_flag=True, default=False,
               help="Preview the scene plan without rendering the video.")
 def make(
@@ -52,6 +54,7 @@ def make(
     music_file: str | None,
     brand_name: str | None,
     profile: str | None,
+    optimization_report: str | None,
     dry_run: bool,
 ) -> None:
     """Build a short video from a script.
@@ -100,6 +103,15 @@ def make(
         bp = BrandProfile.load(profile)
         config = bp.apply_to_config(config)
         click.echo(f"Profile applied : {profile} (brand: {bp.brand_name or 'unnamed'})")
+
+    if optimization_report:
+        import os
+        if not os.path.exists(optimization_report):
+            click.echo(f"Error: Optimization report file not found: {optimization_report}", err=True)
+            sys.exit(1)
+        from clipforge.optimize.models import OptimizationReport
+        report = OptimizationReport.load(optimization_report)
+        _echo_optimization_notes(report.next_video_brief)
 
     # Validate config
     errors = ConfigLoader().validate(config)
@@ -208,3 +220,21 @@ def _print_dry_run(planned: list, config: dict) -> None:
         f"  text={config.get('text_mode','none')}"
     )
     click.echo("\nRun without --dry-run to render the video.")
+
+
+def _echo_optimization_notes(brief: dict) -> None:
+    """Print optimization guidance before building."""
+    if not brief:
+        return
+    click.echo("Optimization notes:")
+    if brief.get("platform"):
+        click.echo(f"  Platform goal : {brief['platform']}")
+    if brief.get("template_ref"):
+        click.echo(f"  Template goal : {brief['template_ref']}")
+    if brief.get("title_direction"):
+        click.echo(f"  Title         : {brief['title_direction']}")
+    if brief.get("hook_direction"):
+        click.echo(f"  Hook          : {brief['hook_direction']}")
+    if brief.get("thumbnail_direction"):
+        click.echo(f"  Thumbnail     : {brief['thumbnail_direction']}")
+    click.echo()

@@ -1,6 +1,6 @@
 # ClipForge V7 — Optimization
 
-Turn historical analytics into actionable guidance for your next video. The optimization engine analyses your `analytics_store` and surfaces concrete recommendations — no AI, no external services, no guesswork.
+Turn historical analytics into actionable guidance for your next video. The optimization engine analyses your `analytics_store` and surfaces concrete recommendations plus a structured next-video brief — no AI, no external services, no guesswork.
 
 ---
 
@@ -31,7 +31,7 @@ clipforge optimize report
 # Preview first (same output, no files written)
 clipforge optimize simulate
 
-# Save recommendations to a file
+# Save recommendations and the next-video checklist to a file
 clipforge optimize apply --output project/optimization_notes.json
 ```
 

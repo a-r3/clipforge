@@ -444,6 +444,48 @@ def test_top_performers_empty_when_no_records():
     assert report.top_performers == {}
 
 
+def test_next_video_brief_contains_actionable_fields():
+    monday = [
+        _rec(
+            platform="youtube",
+            template_ref="tmpl-good",
+            views=6000,
+            ctr=0.8,
+            retention_pct=18.0,
+            engagement_rate=12.0,
+            published_at=f"2024-01-{8 + i * 7:02d}T10:00:00+00:00",
+            fetched_at=f"2024-02-{1 + i:02d}T10:00:00+00:00",
+        )
+        for i in range(3)
+    ]
+    friday = [
+        _rec(
+            platform="tiktok",
+            template_ref="tmpl-bad",
+            views=500,
+            ctr=0.6,
+            retention_pct=15.0,
+            engagement_rate=2.0,
+            published_at=f"2024-01-{12 + i * 7:02d}T18:00:00+00:00",
+            fetched_at=f"2024-02-{10 + i:02d}T10:00:00+00:00",
+        )
+        for i in range(3)
+    ]
+    opt = Optimizer(monday + friday)
+    report = opt.analyze()
+    brief = report.next_video_brief
+    assert brief["platform"] == "youtube"
+    assert brief["template_ref"] == "tmpl-good"
+    assert brief["publish_day"] == "Monday"
+    assert brief["publish_window_utc"] == "10:00 UTC"
+    assert "promise-led title" in brief["title_direction"]
+    assert "first 3 seconds" in brief["hook_direction"]
+    assert brief["reference_video"]["views"] == 6000
+    assert len(brief["action_checklist"]) >= 5
+    assert any("Build the next video primarily for youtube." == item for item in brief["action_checklist"])
+    assert len(brief["rationale"]) >= 1
+
+
 # ── Manifest schema safety ────────────────────────────────────────────────────
 
 

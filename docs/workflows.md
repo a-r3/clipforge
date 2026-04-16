@@ -149,11 +149,11 @@ clipforge optimize report --last-n 20 --platform youtube
 # Preview before saving
 clipforge optimize simulate
 
-# Save recommendations for reference
+# Save recommendations and the next-video checklist for reference
 clipforge optimize apply --output optimization_notes.json
 ```
 
-The optimizer surfaces: CTR vs benchmark, retention issues, best posting day, top template, engagement trend, publishing cadence.
+The optimizer surfaces: CTR vs benchmark, retention issues, best posting day, top template, engagement trend, publishing cadence, and a next-video execution checklist.
 
 ---
 

@@ -132,6 +132,9 @@ class OptimizationReport:
         (positive = improving).  0.0 when insufficient data.
     summary_metrics:
         Overall averages for key metrics across all records analysed.
+    next_video_brief:
+        Structured advisory brief for the next video: platform, template,
+        timing window, and creative direction hints derived from the report.
     """
 
     report_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -145,6 +148,7 @@ class OptimizationReport:
     trend: str = "insufficient_data"
     trend_pct: float = 0.0
     summary_metrics: dict[str, Any] = field(default_factory=dict)
+    next_video_brief: dict[str, Any] = field(default_factory=dict)
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -171,6 +175,7 @@ class OptimizationReport:
             "trend_pct": round(self.trend_pct, 2),
             "summary_metrics": self.summary_metrics,
             "top_performers": self.top_performers,
+            "next_video_brief": self.next_video_brief,
             "recommendations": [r.to_dict() for r in self.recommendations],
         }
 
@@ -188,6 +193,7 @@ class OptimizationReport:
             trend=data.get("trend", "insufficient_data"),
             trend_pct=float(data.get("trend_pct", 0.0)),
             summary_metrics=data.get("summary_metrics", {}),
+            next_video_brief=data.get("next_video_brief", {}),
         )
 
     def save(self, path: str | Path) -> None:
